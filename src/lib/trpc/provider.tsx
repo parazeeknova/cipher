@@ -1,6 +1,6 @@
+/* eslint-disable node/prefer-global/process */
 'use client'
 
-import process from 'node:process'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { httpBatchLink } from '@trpc/client'

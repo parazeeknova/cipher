@@ -22,7 +22,7 @@
       },
       "devDependencies": {
         "@antfu/eslint-config": "^4.17.0",
-        "@types/node": "^20.19.7",
+        "@types/node": "^20.19.8",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
         "eslint": "^9.31.0",
