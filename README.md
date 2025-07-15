@@ -1,2 +1,0 @@
-# chipher
-Mozilla Firefox consiprecy
