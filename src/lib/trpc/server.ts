@@ -1,6 +1,6 @@
+import type { NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { initTRPC, TRPCError } from '@trpc/server'
-import type { NextRequest } from 'next/server'
 
 export async function createContext(req: NextRequest) {
   const { userId } = await auth()

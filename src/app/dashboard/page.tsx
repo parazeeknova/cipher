@@ -1,9 +1,9 @@
 'use client'
 
-import { trpc } from '@/lib/trpc/client'
-import { SignedIn, SignedOut, useUser, useClerk } from '@clerk/nextjs'
+import { SignedIn, SignedOut, useClerk, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { trpc } from '@/lib/trpc/client'
 
 export default function Dashboard() {
   const { user, isLoaded } = useUser()
@@ -24,7 +24,8 @@ export default function Dashboard() {
     try {
       await signOut()
       router.push('/')
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error signing out:', error)
     }
   }
@@ -72,7 +73,9 @@ export default function Dashboard() {
           <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
             <h2 className="text-xl font-semibold mb-4 text-white">Welcome Back!</h2>
             <div className="text-green-400 font-medium">
-              Successfully authenticated as {user?.primaryEmailAddress?.emailAddress}
+              Successfully authenticated as
+              {' '}
+              {user?.primaryEmailAddress?.emailAddress}
             </div>
             <div className="text-sm text-gray-400 mt-2">
               You have access to all protected features.
@@ -87,12 +90,17 @@ export default function Dashboard() {
                 {healthCheck.isLoading && <span className="text-yellow-400">Loading...</span>}
                 {healthCheck.error && (
                   <span className="text-red-400">
-                    Error: {healthCheck.error.message}
+                    Error:
+                    {' '}
+                    {healthCheck.error.message}
                   </span>
                 )}
                 {healthCheck.data && (
                   <span className="text-green-400">
-                    {healthCheck.data.status} - {healthCheck.data.message}
+                    {healthCheck.data.status}
+                    {' '}
+                    -
+                    {healthCheck.data.message}
                   </span>
                 )}
               </div>
@@ -108,7 +116,9 @@ export default function Dashboard() {
                   {privateMessage.isLoading && <span className="text-yellow-400">Loading...</span>}
                   {privateMessage.error && (
                     <span className="text-red-400">
-                      Error: {privateMessage.error.message}
+                      Error:
+                      {' '}
+                      {privateMessage.error.message}
                     </span>
                   )}
                   {privateMessage.data && (
@@ -125,17 +135,23 @@ export default function Dashboard() {
                   {userProfile.isLoading && <span className="text-yellow-400">Loading...</span>}
                   {userProfile.error && (
                     <span className="text-red-400">
-                      Error: {userProfile.error.message}
+                      Error:
+                      {' '}
+                      {userProfile.error.message}
                     </span>
                   )}
                   {userProfile.data && (
                     <div className="text-purple-400">
                       <div>{userProfile.data.message}</div>
                       <div className="text-sm text-gray-400 mt-1">
-                        User ID: {userProfile.data.userId}
+                        User ID:
+                        {' '}
+                        {userProfile.data.userId}
                       </div>
                       <div className="text-sm text-gray-400 mt-1">
-                        Fetched at: {userProfile.data.timestamp}
+                        Fetched at:
+                        {' '}
+                        {userProfile.data.timestamp}
                       </div>
                     </div>
                   )}

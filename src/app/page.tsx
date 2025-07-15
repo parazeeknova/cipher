@@ -1,22 +1,23 @@
-"use client"
+'use client'
 
-import { useUser, useSignIn, useSignUp } from "@clerk/nextjs"
-import { Environment, OrbitControls } from "@react-three/drei"
-import { Canvas, useFrame } from "@react-three/fiber"
-import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
-import * as THREE from "three"
+import { useSignIn, useSignUp, useUser } from '@clerk/nextjs'
+import { Environment, OrbitControls } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
 
-const isMobile = () => {
-  if (typeof window === "undefined") return false
+function isMobile() {
+  if (typeof window === 'undefined')
+    return false
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 }
 
-const BoxWithEdges = ({ position, color = "#6b7280", edgeColor = "#374151" }: {
-  position: [number, number, number];
-  color?: string;
-  edgeColor?: string;
-}) => {
+function BoxWithEdges({ position, color = '#6b7280', edgeColor = '#374151' }: {
+  position: [number, number, number]
+  color?: string
+  edgeColor?: string
+}) {
   return (
     <group position={position}>
       <mesh>
@@ -39,59 +40,59 @@ const BoxWithEdges = ({ position, color = "#6b7280", edgeColor = "#374151" }: {
   )
 }
 
-const BoxLetter = ({ letter, position, color, edgeColor }: {
-  letter: string;
-  position: [number, number, number];
-  color: string;
-  edgeColor: string;
-}) => {
+function BoxLetter({ letter, position, color, edgeColor }: {
+  letter: string
+  position: [number, number, number]
+  color: string
+  edgeColor: string
+}) {
   const group = useRef<THREE.Group>(null)
 
   const getLetterShape = (letter: string): number[][] => {
     const shapes: { [key: string]: number[][] } = {
-      C: [
+      'C': [
         [0, 1, 1, 1, 0],
         [1, 0, 0, 0, 0],
         [1, 0, 0, 0, 0],
         [1, 0, 0, 0, 0],
         [0, 1, 1, 1, 0],
       ],
-      I: [
+      'I': [
         [0, 1, 0],
         [0, 1, 0],
         [0, 1, 0],
         [0, 0, 0],
         [0, 1, 0],
       ],
-      P: [
+      'P': [
         [1, 1, 1, 0],
         [1, 0, 0, 1],
         [1, 1, 1, 0],
         [1, 0, 0, 0],
         [1, 0, 0, 0],
       ],
-      H: [
+      'H': [
         [1, 0, 0, 1, 0],
         [1, 0, 0, 1, 0],
         [1, 1, 1, 1, 0],
         [1, 0, 0, 1, 0],
         [1, 0, 0, 1, 0],
       ],
-      E: [
+      'E': [
         [1, 1, 1, 0, 0],
         [1, 0, 0, 0, 0],
         [1, 1, 0, 0, 0],
         [1, 0, 0, 0, 0],
         [1, 1, 1, 0, 0],
       ],
-      R: [
+      'R': [
         [1, 1, 1, 0, 0],
         [1, 0, 0, 1, 0],
         [1, 1, 1, 0, 0],
         [1, 0, 1, 0, 0],
         [1, 0, 0, 1, 0],
       ],
-      "#": [
+      '#': [
         [0, 1, 0, 1, 0],
         [1, 1, 1, 1, 1],
         [0, 1, 0, 1, 0],
@@ -99,7 +100,7 @@ const BoxLetter = ({ letter, position, color, edgeColor }: {
         [0, 1, 0, 1, 0],
       ],
     }
-    return shapes[letter] || shapes["I"]
+    return shapes[letter] || shapes.I
   }
 
   const letterShape = getLetterShape(letter)
@@ -111,25 +112,25 @@ const BoxLetter = ({ letter, position, color, edgeColor }: {
           if (cell) {
             let xOffset = j * 0.5
 
-            if (letter === "C") {
+            if (letter === 'C') {
               xOffset = j * 0.5 - 1
             }
-            if (letter === "I") {
+            if (letter === 'I') {
               xOffset = j * 0.5 - 0.5
             }
-            if (letter === "P") {
+            if (letter === 'P') {
               xOffset = j * 0.5 - 1
             }
-            if (letter === "H") {
+            if (letter === 'H') {
               xOffset = j * 0.5 - 1
             }
-            if (letter === "E") {
+            if (letter === 'E') {
               xOffset = j * 0.5 - 1
             }
-            if (letter === "R") {
+            if (letter === 'R') {
               xOffset = j * 0.5 - 1
             }
-            if (letter === "#") {
+            if (letter === '#') {
               xOffset = j * 0.5 - 1
             }
 
@@ -149,7 +150,7 @@ const BoxLetter = ({ letter, position, color, edgeColor }: {
   )
 }
 
-const Scene = ({ showCipher = true }: { showCipher?: boolean }) => {
+function Scene({ showCipher = true }: { showCipher?: boolean }) {
   const orbitControlsRef = useRef<any>(null)
   const [isMobileDevice, setIsMobileDevice] = useState(false)
   const cipherGroupRef = useRef<THREE.Group>(null)
@@ -222,8 +223,8 @@ const Scene = ({ showCipher = true }: { showCipher?: boolean }) => {
       <Environment
         files={
           isMobileDevice
-            ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/download3-7FArHVIJTFszlXm2045mQDPzsZqAyo.jpg"
-            : "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/dither_it_M3_Drone_Shot_equirectangular-jpg_San_Francisco_Big_City_1287677938_12251179%20(1)-NY2qcmpjkyG6rDp1cPGIdX0bHk3hMR.jpg"
+            ? 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/download3-7FArHVIJTFszlXm2045mQDPzsZqAyo.jpg'
+            : 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/dither_it_M3_Drone_Shot_equirectangular-jpg_San_Francisco_Big_City_1287677938_12251179%20(1)-NY2qcmpjkyG6rDp1cPGIdX0bHk3hMR.jpg'
         }
         background
       />
@@ -231,29 +232,35 @@ const Scene = ({ showCipher = true }: { showCipher?: boolean }) => {
   )
 }
 
-const GoogleAuthButton = ({ onSuccess }: { onSuccess: () => void }) => {
+// eslint-disable-next-line unused-imports/no-unused-vars
+function GoogleAuthButton({ onSuccess }: { onSuccess: () => void }) {
   const { signIn } = useSignIn()
   const { signUp } = useSignUp()
   const [loading, setLoading] = useState(false)
 
   const handleGoogleAuth = async () => {
-    if (!signIn || !signUp) return
+    if (!signIn || !signUp)
+      return
 
     setLoading(true)
     try {
+      // eslint-disable-next-line unused-imports/no-unused-vars
       const signInResult = await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: '/dashboard',
         redirectUrlComplete: '/dashboard',
       })
-    } catch (error) {
+    }
+    // eslint-disable-next-line unused-imports/no-unused-vars
+    catch (error) {
       try {
         await signUp.authenticateWithRedirect({
           strategy: 'oauth_google',
           redirectUrl: '/dashboard',
           redirectUrlComplete: '/dashboard',
         })
-      } catch (signUpError) {
+      }
+      catch (signUpError) {
         console.error('Google authentication failed:', signUpError)
         setLoading(false)
       }
@@ -306,7 +313,8 @@ export default function Home() {
         event.preventDefault()
         if (isSignedIn) {
           router.push('/dashboard')
-        } else {
+        }
+        else {
           setCurrentView('auth')
         }
       }
@@ -367,6 +375,7 @@ export default function Home() {
 
             <div className="mt-8">
               <button
+                type="button"
                 onClick={handleBackToHome}
                 className="text-gray-600 hover:text-white transition-colors text-sm"
               >
@@ -389,7 +398,8 @@ export default function Home() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style jsx>
+        {`
         @keyframes fadeInOut {
           0%, 100% { opacity: 0.6; }
           50% { opacity: 1; }
@@ -398,7 +408,8 @@ export default function Home() {
         .animate-fade {
           animation: fadeInOut 2s ease-in-out infinite;
         }
-      `}</style>
+      `}
+      </style>
     </div>
   )
 }
