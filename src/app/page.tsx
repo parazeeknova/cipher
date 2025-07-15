@@ -346,15 +346,11 @@ export default function Home() {
         <Scene showCipher={currentView === 'home'} />
       </Canvas>
 
-      {currentView === 'home' && (
-        <div className="absolute inset-0 transition-all duration-500 ease-in-out">
-          {showInstruction && (
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-pulse">
-              <p className="text-gray-100 text-lg font-light tracking-wider">
-                press space to enter
-              </p>
-            </div>
-          )}
+      {currentView === 'home' && showInstruction && (
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-pulse transition-all duration-500 ease-in-out pointer-events-none">
+          <p className="text-gray-400 text-lg tracking-wider">
+            press space to enter
+          </p>
         </div>
       )}
 
