@@ -19,8 +19,6 @@
     "@trpc/server": "^11.4.3",
     "next": "15.4.1",
     "postcss": "^8.5.6",
-    "posthog-js": "^1.257.0",
-    "posthog-node": "^5.5.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tailwindcss": "^4.1.11",
