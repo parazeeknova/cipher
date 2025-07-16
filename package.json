@@ -13,12 +13,13 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.25.1",
+    "@clerk/nextjs": "^6.25.3",
     "@neondatabase/serverless": "^1.0.1",
     "@react-three/drei": "^10.5.1",
     "@react-three/fiber": "^9.2.0",
     "@t3-oss/env-core": "^0.13.8",
     "@tailwindcss/postcss": "^4.1.11",
+    "@tanstack/react-form": "^1.14.1",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-query-devtools": "^5.83.0",
     "@trpc/client": "^11.4.3",

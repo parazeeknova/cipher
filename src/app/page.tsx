@@ -3,14 +3,64 @@
 import { useSignIn, useSignUp, useUser } from '@clerk/nextjs'
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { useForm } from '@tanstack/react-form'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { trpc } from '@/lib/trpc/client'
 
 function isMobile() {
   if (typeof window === 'undefined')
     return false
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+function GlassmorphicSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-8 h-8',
+    lg: 'w-12 h-12',
+  }
+
+  return (
+    <div className={`${sizeClasses[size]} relative`}>
+      <div className="absolute inset-0 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full animate-spin">
+        <div className="absolute top-0 left-1/2 w-1 h-1 bg-white/60 rounded-full transform -translate-x-1/2" />
+      </div>
+      <div className="absolute inset-1 bg-white/10 backdrop-blur-md rounded-full" />
+    </div>
+  )
+}
+
+function GlassmorphicLoadingCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
+      <div className="flex flex-col items-center justify-center space-y-6">
+        <div className="relative">
+          <GlassmorphicSpinner size="lg" />
+          <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-xl animate-pulse" />
+        </div>
+        <div className="text-center space-y-2">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GlassmorphicSkeletonLine({ width = 'full' }: { width?: 'full' | '3/4' | '1/2' | '1/4' }) {
+  const widthClasses = {
+    'full': 'w-full',
+    '3/4': 'w-3/4',
+    '1/2': 'w-1/2',
+    '1/4': 'w-1/4',
+  }
+
+  return (
+    <div className={`${widthClasses[width]} h-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg animate-pulse`}>
+      <div className="h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+    </div>
+  )
 }
 
 function BoxWithEdges({ position, color = '#6b7280', edgeColor = '#374151' }: {
@@ -167,7 +217,6 @@ function Scene({ showCipher = true }: { showCipher?: boolean }) {
 
   useFrame((state, delta) => {
     if (cipherGroupRef.current) {
-      // Smooth opacity transition
       const speed = 3
       currentOpacity.current += (targetOpacity.current - currentOpacity.current) * speed * delta
 
@@ -232,37 +281,39 @@ function Scene({ showCipher = true }: { showCipher?: boolean }) {
   )
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-function GoogleAuthButton({ onSuccess }: { onSuccess: () => void }) {
-  const { signIn } = useSignIn()
-  const { signUp } = useSignUp()
-  const [loading, setLoading] = useState(false)
+function GoogleAuthButton({ onSuccess: _onSuccess }: { onSuccess: () => void }) {
+  const { signUp, isLoaded: signUpLoaded } = useSignUp()
+  const { signIn, isLoaded: signInLoaded } = useSignIn()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const isLoaded = signUpLoaded && signInLoaded
 
   const handleGoogleAuth = async () => {
-    if (!signIn || !signUp)
+    if (!isLoaded || !signUp || !signIn)
       return
 
-    setLoading(true)
+    setIsLoading(true)
+
     try {
-      // eslint-disable-next-line unused-imports/no-unused-vars
-      const signInResult = await signIn.authenticateWithRedirect({
+      // Try sign-in first for existing users
+      await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: '/dashboard',
-        redirectUrlComplete: '/dashboard',
+        redirectUrl: window.location.origin,
+        redirectUrlComplete: window.location.origin,
       })
     }
-    // eslint-disable-next-line unused-imports/no-unused-vars
-    catch (error) {
+    catch {
       try {
+        // If sign-in fails, try sign-up for new users
         await signUp.authenticateWithRedirect({
           strategy: 'oauth_google',
-          redirectUrl: '/dashboard',
-          redirectUrlComplete: '/dashboard',
+          redirectUrl: window.location.origin,
+          redirectUrlComplete: window.location.origin,
         })
       }
       catch (signUpError) {
-        console.error('Google authentication failed:', signUpError)
-        setLoading(false)
+        console.error('Authentication failed:', signUpError)
+        setIsLoading(false)
       }
     }
   }
@@ -270,49 +321,248 @@ function GoogleAuthButton({ onSuccess }: { onSuccess: () => void }) {
   return (
     <button
       onClick={handleGoogleAuth}
-      disabled={loading}
+      disabled={isLoading || !isLoaded}
       className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-gray-600 font-medium text-lg shadow-2xl hover:bg-white/20 hover:border-white/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
     >
       <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      <svg className="w-6 h-6" viewBox="0 0 24 24">
-        <path
-          fill="currentColor"
-          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        />
-        <path
-          fill="currentColor"
-          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        />
-        <path
-          fill="currentColor"
-          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-        />
-        <path
-          fill="currentColor"
-          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        />
-      </svg>
+      {isLoading
+        ? (
+            <GlassmorphicSpinner size="sm" />
+          )
+        : (
+            <svg className="w-6 h-6" viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="currentColor"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+          )}
 
       <span className="relative z-10">
-        {loading ? 'Connecting...' : 'Continue with Google'}
+        {isLoading ? 'Connecting...' : 'Continue with Google'}
       </span>
     </button>
   )
 }
 
+function OnboardingForm({ user, onComplete }: { user: any, onComplete: () => void }) {
+  const router = useRouter()
+  const utils = trpc.useUtils()
+
+  const onboardMutation = trpc.onboardUser.useMutation({
+    onSuccess: () => {
+      onComplete()
+    },
+    onError: (error) => {
+      console.error('Onboarding error:', error)
+    },
+  })
+
+  const form = useForm({
+    defaultValues: {
+      username: '',
+    },
+    onSubmit: async ({ value }) => {
+      if (!user?.primaryEmailAddress?.emailAddress)
+        return
+
+      await onboardMutation.mutateAsync({
+        username: value.username,
+        email: user.primaryEmailAddress.emailAddress,
+        firstName: user.firstName || undefined,
+        lastName: user.lastName || undefined,
+        imageUrl: user.imageUrl || undefined,
+      })
+    },
+  })
+
+  const handleRefreshCheck = async () => {
+    await utils.getUser.invalidate()
+    const result = await utils.getUser.fetch()
+    if (result) {
+      router.push('/dashboard')
+    }
+  }
+
+  return (
+    <div className="w-full max-w-md">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
+        <div className="text-center mb-8">
+          <p className="text-gray-600">
+            Choose a unique username to complete your profile
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4 mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+          {user.imageUrl && (
+            <img
+              src={user.imageUrl}
+              alt="Profile"
+              className="w-12 h-12 rounded-full border-2 border-white/20"
+            />
+          )}
+          <div>
+            <div className="text-gray-600 font-medium">
+              {user.firstName}
+              {' '}
+              {user.lastName}
+            </div>
+            <div className="text-gray-500 text-sm">
+              {user.primaryEmailAddress?.emailAddress}
+            </div>
+          </div>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            form.handleSubmit()
+          }}
+          className="space-y-6"
+        >
+          <form.Field
+            name="username"
+            validators={{
+              onChange: ({ value }) => {
+                if (!value || value.length < 3) {
+                  return 'Username must be at least 3 characters'
+                }
+                if (value.length > 50) {
+                  return 'Username must be less than 50 characters'
+                }
+                if (!/^\w+$/.test(value)) {
+                  return 'Username can only contain letters, numbers, and underscores'
+                }
+                return undefined
+              },
+            }}
+          >
+            {field => (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <input
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={e => field.handleChange(e.target.value)}
+                    placeholder="Enter your username"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all duration-200"
+                    disabled={onboardMutation.isPending}
+                  />
+                  {onboardMutation.isPending && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <GlassmorphicSpinner size="sm" />
+                    </div>
+                  )}
+                </div>
+                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                  <div className="mt-2 text-red-400 text-sm">
+                    {field.state.meta.errors[0]}
+                  </div>
+                )}
+                {field.state.value.length >= 3
+                  && !field.state.meta.errors.length && (
+                  <div className="mt-2 text-green-400 text-sm">
+                    ✓ Username looks good
+                  </div>
+                )}
+              </div>
+            )}
+          </form.Field>
+
+          <form.Subscribe
+            selector={state => [state.canSubmit, state.isSubmitting]}
+          >
+            {([canSubmit, isSubmitting]) => (
+              <button
+                type="submit"
+                disabled={!canSubmit || onboardMutation.isPending}
+                className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-gray-600 font-medium text-lg shadow-2xl hover:bg-white/20 hover:border-white/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed w-full"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                {onboardMutation.isPending || isSubmitting
+                  ? <GlassmorphicSpinner size="sm" />
+                  : null}
+
+                <span className="relative z-10">
+                  {onboardMutation.isPending || isSubmitting
+                    ? 'Creating Account...'
+                    : 'Complete Setup'}
+                </span>
+              </button>
+            )}
+          </form.Subscribe>
+
+          {onboardMutation.error && (
+            <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-xl">
+              <div className="text-red-400 text-sm">
+                {onboardMutation.error.message}
+                {onboardMutation.error.message.includes('already exists') && (
+                  <div className="mt-2">
+                    <button
+                      onClick={handleRefreshCheck}
+                      className="text-blue-400 underline text-xs"
+                    >
+                      Click here to go to dashboard
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+
+      <div className="text-center mt-6">
+        <p className="text-gray-600 text-sm">
+          By continuing, you agree to our terms and conditions
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const router = useRouter()
-  const { isSignedIn, isLoaded } = useUser()
+  const { isSignedIn, isLoaded, user } = useUser()
   const [showInstruction, setShowInstruction] = useState(true)
-  const [currentView, setCurrentView] = useState<'home' | 'auth'>('home')
+  const [currentView, setCurrentView] = useState<'home' | 'auth' | 'onboarding'>('home')
+
+  const existingUser = trpc.getUser.useQuery(undefined, {
+    enabled: isLoaded && !!user,
+    retry: 3,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.code === 'Space') {
         event.preventDefault()
         if (isSignedIn) {
-          router.push('/dashboard')
+          if (existingUser.data) {
+            router.push('/dashboard')
+          }
+          else if (!existingUser.isLoading) {
+            setCurrentView('onboarding')
+          }
         }
         else {
           setCurrentView('auth')
@@ -322,17 +572,39 @@ export default function Home() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isSignedIn, router])
+  }, [isSignedIn, existingUser.data, existingUser.isLoading, router])
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowInstruction(false)
-    }, 150000)
+    }, 15000)
 
     return () => clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      const timer = setTimeout(() => {
+        if (existingUser.data) {
+          router.push('/dashboard')
+        }
+        else if (!existingUser.isLoading && !existingUser.error) {
+          setCurrentView('onboarding')
+        }
+        else if (existingUser.error) {
+          setCurrentView('onboarding')
+        }
+      }, 500)
+
+      return () => clearTimeout(timer)
+    }
+  }, [isLoaded, isSignedIn, user, existingUser.data, existingUser.isLoading, existingUser.error, router])
+
   const handleAuthSuccess = () => {
+    // This will be handled by the useEffect above
+  }
+
+  const handleOnboardingComplete = () => {
     router.push('/dashboard')
   }
 
@@ -342,8 +614,22 @@ export default function Home() {
 
   if (!isLoaded) {
     return (
-      <div className="w-full h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-100 text-lg">Loading...</div>
+      <div className="w-full h-screen bg-gray-900 relative overflow-hidden flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
+        <div className="relative z-10 w-full max-w-md">
+          <GlassmorphicLoadingCard>
+            <div className="space-y-3">
+              <GlassmorphicSkeletonLine width="3/4" />
+              <GlassmorphicSkeletonLine width="1/2" />
+              <GlassmorphicSkeletonLine width="full" />
+            </div>
+            <p className="text-gray-600 text-sm mt-4">
+              Initializing Cipher...
+            </p>
+          </GlassmorphicLoadingCard>
+        </div>
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" />
+        <div className="absolute top-3/4 right-1/4 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000" />
       </div>
     )
   }
@@ -386,11 +672,11 @@ export default function Home() {
         </div>
       )}
 
-      <div className="absolute top-8 right-8">
-        <div className="text-white text-sm opacity-70">
-          {isSignedIn ? 'Authenticated' : 'Guest'}
+      {currentView === 'onboarding' && user && (
+        <div className="absolute inset-0 flex items-center justify-center p-4 z-10 transition-all duration-500 ease-in-out">
+          <OnboardingForm user={user} onComplete={handleOnboardingComplete} />
         </div>
-      </div>
+      )}
 
       <div className="absolute top-8 left-8">
         <div className="text-gray-100 text-sm font-bold tracking-wider">
@@ -407,6 +693,19 @@ export default function Home() {
 
         .animate-fade {
           animation: fadeInOut 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
         }
       `}
       </style>
