@@ -11,8 +11,17 @@ export default function Dashboard() {
   const router = useRouter()
 
   const healthCheck = trpc.health.useQuery()
+  const dbHealth = trpc.dbHealth.useQuery()
   const privateMessage = trpc.getPrivateMessage.useQuery()
   const userProfile = trpc.getUserProfile.useQuery()
+  const currentUser = trpc.getUser.useQuery()
+  const allUsers = trpc.getAllUsers.useQuery()
+  const createUserMutation = trpc.createUser.useMutation({
+    onSuccess: () => {
+      currentUser.refetch()
+      allUsers.refetch()
+    },
+  })
 
   useEffect(() => {
     if (isLoaded && !user) {
@@ -104,6 +113,26 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-300">Database:</span>
+                {dbHealth.isLoading && <span className="text-yellow-400">Loading...</span>}
+                {dbHealth.error && (
+                  <span className="text-red-400">
+                    Error:
+                    {' '}
+                    {dbHealth.error.message}
+                  </span>
+                )}
+                {dbHealth.data && (
+                  <span className={dbHealth.data.status === 'ok' ? 'text-green-400' : 'text-red-400'}>
+                    {dbHealth.data.status}
+                    {' '}
+                    -
+                    {' '}
+                    {dbHealth.data.message}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -156,6 +185,88 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-white">Database Integration</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-300">Current User in DB:</span>
+                  {currentUser.isLoading && <span className="text-yellow-400">Loading...</span>}
+                  {currentUser.error && (
+                    <span className="text-red-400">
+                      Error:
+                      {' '}
+                      {currentUser.error.message}
+                    </span>
+                  )}
+                  {currentUser.data && (
+                    <span className="text-green-400">
+                      {currentUser.data.email}
+                      {' '}
+                      (ID:
+                      {currentUser.data.id}
+                      )
+                    </span>
+                  )}
+                  {!currentUser.data && !currentUser.isLoading && !currentUser.error && (
+                    <span className="text-orange-400">Not found in database</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-300">Total Users:</span>
+                  {allUsers.isLoading && <span className="text-yellow-400">Loading...</span>}
+                  {allUsers.error && (
+                    <span className="text-red-400">
+                      Error:
+                      {' '}
+                      {allUsers.error.message}
+                    </span>
+                  )}
+                  {allUsers.data && (
+                    <span className="text-blue-400">
+                      {allUsers.data.length}
+                      {' '}
+                      user(s)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    if (user?.primaryEmailAddress?.emailAddress) {
+                      createUserMutation.mutate({
+                        email: user.primaryEmailAddress.emailAddress,
+                        firstName: user.firstName || undefined,
+                        lastName: user.lastName || undefined,
+                        imageUrl: user.imageUrl || undefined,
+                      })
+                    }
+                  }}
+                  disabled={createUserMutation.isPending || !!currentUser.data}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 rounded transition-colors"
+                >
+                  {createUserMutation.isPending
+                    ? 'Creating...'
+                    : currentUser.data
+                      ? 'User Already Exists'
+                      : 'Create User in Database'}
+                </button>
+                {createUserMutation.error && (
+                  <div className="text-red-400 text-sm">
+                    Error:
+                    {' '}
+                    {createUserMutation.error.message}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { initTRPC, TRPCError } from '@trpc/server'
+import { db } from '../db/client'
 
 export async function createContext(req: NextRequest) {
   const { userId } = await auth()
@@ -8,6 +9,7 @@ export async function createContext(req: NextRequest) {
   return {
     req,
     userId,
+    db,
   }
 }
 
