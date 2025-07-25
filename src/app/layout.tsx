@@ -27,6 +27,9 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+        <head>
+          <script defer src="https://analytics-umami.zephyyrr.in/script.js" data-website-id="c32f955d-1e26-4e7f-85b9-6fc2e65759f1"></script>
+        </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
           <TRPCProvider>
             {children}

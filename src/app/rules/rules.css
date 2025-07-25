@@ -1,0 +1,278 @@
+.float-0 { animation-name: float-0; animation-duration: 3.5s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-1 { animation-name: float-1; animation-duration: 4s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-2 { animation-name: float-2; animation-duration: 3s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-3 { animation-name: float-3; animation-duration: 4.5s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-4 { animation-name: float-4; animation-duration: 3.8s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-5 { animation-name: float-5; animation-duration: 3.2s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-6 { animation-name: float-6; animation-duration: 4.2s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .float-7 { animation-name: float-7; animation-duration: 3.6s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+
+        .matrix-fall-0 { animation-name: matrix-fall-0; animation-duration: 5s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-1 { animation-name: matrix-fall-1; animation-duration: 6s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-2 { animation-name: matrix-fall-2; animation-duration: 4.5s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-3 { animation-name: matrix-fall-3; animation-duration: 6.5s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-4 { animation-name: matrix-fall-4; animation-duration: 5.5s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-5 { animation-name: matrix-fall-5; animation-duration: 5.8s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-6 { animation-name: matrix-fall-6; animation-duration: 4.8s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-7 { animation-name: matrix-fall-7; animation-duration: 6.2s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-8 { animation-name: matrix-fall-8; animation-duration: 5.3s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-9 { animation-name: matrix-fall-9; animation-duration: 4.7s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-10 { animation-name: matrix-fall-10; animation-duration: 5.9s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .matrix-fall-11 { animation-name: matrix-fall-11; animation-duration: 5.1s; animation-timing-function: linear; animation-iteration-count: infinite; }
+
+        .scan-horizontal-slow { animation-name: scan-horizontal-slow; animation-duration: 6s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .scan-vertical-slow { animation-name: scan-vertical-slow; animation-duration: 8s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .spin-slow { animation-name: spin-slow; animation-duration: 10s; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .data-stream { animation-name: data-stream; animation-duration: 3s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .packet-flow { animation-name: packet-flow; animation-duration: 4s; animation-timing-function: linear; animation-iteration-count: infinite; }
+
+        @keyframes float-0 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-12px) translateX(6px); } }
+        @keyframes float-1 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-18px) translateX(-4px); } }
+        @keyframes float-2 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-10px) translateX(8px); } }
+        @keyframes float-3 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-15px) translateX(-6px); } }
+        @keyframes float-4 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-20px) translateX(5px); } }
+        @keyframes float-5 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-8px) translateX(-10px); } }
+        @keyframes float-6 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-16px) translateX(7px); } }
+        @keyframes float-7 { 0%, 100% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-11px) translateX(-5px); } }
+
+        @keyframes matrix-fall-0 { 0% { transform: translateY(-100px); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(400px); opacity: 0; } }
+        @keyframes matrix-fall-1 { 0% { transform: translateY(-120px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(420px); opacity: 0; } }
+        @keyframes matrix-fall-2 { 0% { transform: translateY(-80px); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(380px); opacity: 0; } }
+        @keyframes matrix-fall-3 { 0% { transform: translateY(-140px); opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translateY(440px); opacity: 0; } }
+        @keyframes matrix-fall-4 { 0% { transform: translateY(-90px); opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { transform: translateY(390px); opacity: 0; } }
+        @keyframes matrix-fall-5 { 0% { transform: translateY(-110px); opacity: 0; } 14% { opacity: 1; } 86% { opacity: 1; } 100% { transform: translateY(410px); opacity: 0; } }
+        @keyframes matrix-fall-6 { 0% { transform: translateY(-70px); opacity: 0; } 22% { opacity: 1; } 78% { opacity: 1; } 100% { transform: translateY(370px); opacity: 0; } }
+        @keyframes matrix-fall-7 { 0% { transform: translateY(-130px); opacity: 0; } 16% { opacity: 1; } 84% { opacity: 1; } 100% { transform: translateY(430px); opacity: 0; } }
+        @keyframes matrix-fall-8 { 0% { transform: translateY(-100px); opacity: 0; } 13% { opacity: 1; } 87% { opacity: 1; } 100% { transform: translateY(400px); opacity: 0; } }
+        @keyframes matrix-fall-9 { 0% { transform: translateY(-85px); opacity: 0; } 19% { opacity: 1; } 81% { opacity: 1; } 100% { transform: translateY(385px); opacity: 0; } }
+        @keyframes matrix-fall-10 { 0% { transform: translateY(-115px); opacity: 0; } 17% { opacity: 1; } 83% { opacity: 1; } 100% { transform: translateY(415px); opacity: 0; } }
+        @keyframes matrix-fall-11 { 0% { transform: translateY(-95px); opacity: 0; } 21% { opacity: 1; } 79% { opacity: 1; } 100% { transform: translateY(395px); opacity: 0; } }
+
+        @keyframes scan-horizontal-slow { 0%, 100% { top: 15%; opacity: 0.2; } 50% { top: 75%; opacity: 0.8; } }
+        @keyframes scan-vertical-slow { 0%, 100% { left: 10%; opacity: 0.2; } 50% { left: 85%; opacity: 0.8; } }
+        @keyframes spin-slow { 0% { transform: rotate(45deg); } 100% { transform: rotate(405deg); } }
+        @keyframes data-stream { 0%, 100% { opacity: 0.1; transform: scaleY(0.5); } 50% { opacity: 0.8; transform: scaleY(1.2); } }
+        @keyframes packet-flow { 0% { top: -5px; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+/* Enhanced glitch text effects */
+.glitch-text {
+  position: relative;
+}
+
+.glitch-layer-1 {
+  animation: glitch-1 0.3s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+}
+
+.glitch-layer-2 {
+  animation: glitch-2 0.3s infinite;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+}
+
+.glitch-active .glitch-layer-1 {
+  animation: glitch-1-active 0.2s infinite;
+}
+
+.glitch-active .glitch-layer-2 {
+  animation: glitch-2-active 0.2s infinite;
+}
+
+/* Typewriter effect */
+.typewriter-text {
+  overflow: hidden;
+  border-right: 2px solid transparent;
+  white-space: nowrap;
+  animation: typewriter 3s steps(20) 1s both;
+}
+
+/* Scan line effects */
+.scan-line {
+  animation: scan-line 2s ease-in-out infinite;
+}
+
+.scan-line-button {
+  animation: scan-line-button 0.6s ease-out;
+}
+
+/* Keyframes */
+@keyframes glitch-1 {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+@keyframes glitch-2 {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(2px); }
+  50% { transform: translateX(-2px); }
+  75% { transform: translateX(1px); }
+}
+
+@keyframes glitch-1-active {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-4px); }
+  20% { transform: translateX(4px); }
+  30% { transform: translateX(-2px); }
+  40% { transform: translateX(3px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(2px); }
+  70% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+  90% { transform: translateX(-2px); }
+}
+
+@keyframes glitch-2-active {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(3px); }
+  30% { transform: translateX(-4px); }
+  45% { transform: translateX(2px); }
+  60% { transform: translateX(-3px); }
+  75% { transform: translateX(4px); }
+  90% { transform: translateX(-1px); }
+}
+
+@keyframes typewriter {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+@keyframes scan-line {
+  0% { left: 0; opacity: 0; }
+  50% { opacity: 1; }
+  100% { left: calc(100% - 8px); opacity: 0; }
+}
+
+@keyframes scan-line-button {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* --- Responsive styles for mobile --- */
+@media (max-width: 900px) {
+  /* Stack sidebar and content vertically */
+  .rules-root {
+    flex-direction: column !important;
+    min-height: 100vh;
+  }
+  .rules-sidebar {
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    border-radius: 0 0 1.5rem 1.5rem !important;
+    margin-bottom: 1rem;
+    z-index: 30;
+  }
+  .rules-content {
+    position: static !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    border-radius: 1.5rem !important;
+    margin: 0 !important;
+    z-index: 10;
+  }
+  .rules-nav {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem 0.5rem 0 0.5rem !important;
+  }
+  .rules-nav h2 {
+    font-size: 1rem !important;
+  }
+  .rules-nav button {
+    font-size: 0.9rem !important;
+    height: 2.5rem !important;
+  }
+  .rules-header {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+  }
+  .rules-header h1 {
+    font-size: 1.2rem !important;
+  }
+  .rules-section {
+    padding: 1rem !important;
+  }
+  .rules-section h2 {
+    font-size: 1.1rem !important;
+  }
+  .rules-section h3 {
+    font-size: 1rem !important;
+  }
+  .rules-section h4 {
+    font-size: 0.95rem !important;
+  }
+  .rules-section h5 {
+    font-size: 0.9rem !important;
+  }
+  .rules-section p, .rules-section li, .rules-section span {
+    font-size: 0.95rem !important;
+  }
+  .rules-section .grid, .rules-section .grid-cols-1, .rules-section .grid-cols-2, .rules-section .grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  .rules-section .gap-4 {
+    gap: 1rem !important;
+  }
+  .rules-section .p-6 {
+    padding: 1rem !important;
+  }
+  .rules-section .p-4 {
+    padding: 0.75rem !important;
+  }
+  .rules-section .mb-4 {
+    margin-bottom: 0.75rem !important;
+  }
+  .rules-section .mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+  .rules-section .mb-1 {
+    margin-bottom: 0.25rem !important;
+  }
+  .rules-section .mt-8 {
+    margin-top: 1.5rem !important;
+  }
+  .rules-section .h-96 {
+    height: 16rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .rules-header h1 {
+    font-size: 1rem !important;
+  }
+  .rules-section h2 {
+    font-size: 1rem !important;
+  }
+  .rules-section h3 {
+    font-size: 0.95rem !important;
+  }
+  .rules-section h4 {
+    font-size: 0.9rem !important;
+  }
+  .rules-section h5 {
+    font-size: 0.85rem !important;
+  }
+  .rules-section p, .rules-section li, .rules-section span {
+    font-size: 0.9rem !important;
+  }
+  .rules-section .h-96 {
+    height: 12rem !important;
+  }
+}
+
+/* Hide elements on mobile (<= 900px) */
+@media (max-width: 900px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
