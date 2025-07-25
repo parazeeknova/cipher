@@ -5,12 +5,25 @@ const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
 ])
 
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/api/trpc(.*)',
+])
+
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth()
 
+  // Allow public routes
+  if (isPublicRoute(req)) {
+    return NextResponse.next()
+  }
+
+  // Redirect unauthenticated users trying to access protected routes
   if (isProtectedRoute(req) && !userId) {
     return NextResponse.redirect(new URL('/', req.url))
   }
+
+  return NextResponse.next()
 })
 
 export const config = {

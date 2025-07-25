@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { users } from '../db/schema'
+import { generatePlayerId } from '../utils/player-id'
 import { protectedProcedure, publicProcedure, router } from './server'
 
 export const appRouter = router({
@@ -51,7 +52,7 @@ export const appRouter = router({
     }),
 
   // Database procedures
-  createUser: protectedProcedure
+  createOrGetUser: protectedProcedure
     .input(z.object({
       email: z.string().email(),
       firstName: z.string().optional(),
@@ -65,8 +66,26 @@ export const appRouter = router({
           return existingUser[0]
         }
 
+        let playerId = generatePlayerId()
+        let attempts = 0
+        const maxAttempts = 10
+
+        while (attempts < maxAttempts) {
+          const playerIdExists = await ctx.db.select().from(users).where(eq(users.playerId, playerId))
+          if (playerIdExists.length === 0) {
+            break
+          }
+          playerId = generatePlayerId()
+          attempts++
+        }
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Failed to generate unique player ID')
+        }
+
         const userValues: Record<string, any> = {
           clerkId: ctx.userId,
+          playerId,
           email: input.email,
         }
 
@@ -107,7 +126,21 @@ export const appRouter = router({
       try {
         const existingUser = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
         if (existingUser.length > 0) {
-          throw new Error('User already exists')
+          if (!existingUser[0].username) {
+            const usernameExists = await ctx.db.select().from(users).where(eq(users.username, input.username))
+            if (usernameExists.length > 0) {
+              throw new Error('Username is already taken')
+            }
+
+            const updatedUser = await ctx.db
+              .update(users)
+              .set({ username: input.username })
+              .where(eq(users.clerkId, ctx.userId))
+              .returning()
+
+            return updatedUser[0]
+          }
+          return existingUser[0]
         }
 
         const usernameExists = await ctx.db.select().from(users).where(eq(users.username, input.username))
@@ -115,8 +148,26 @@ export const appRouter = router({
           throw new Error('Username is already taken')
         }
 
+        let playerId = generatePlayerId()
+        let attempts = 0
+        const maxAttempts = 10
+
+        while (attempts < maxAttempts) {
+          const playerIdExists = await ctx.db.select().from(users).where(eq(users.playerId, playerId))
+          if (playerIdExists.length === 0) {
+            break
+          }
+          playerId = generatePlayerId()
+          attempts++
+        }
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Failed to generate unique player ID')
+        }
+
         const userValues: Record<string, any> = {
           clerkId: ctx.userId,
+          playerId,
           email: input.email,
           username: input.username,
         }

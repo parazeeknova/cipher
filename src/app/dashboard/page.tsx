@@ -198,13 +198,24 @@ export default function Dashboard() {
                     </span>
                   )}
                   {currentUser.data && (
-                    <span className="text-green-400">
-                      {currentUser.data.email}
-                      {' '}
-                      (ID:
-                      {currentUser.data.id}
-                      )
-                    </span>
+                    <div className="text-green-400">
+                      <div>{currentUser.data.email}</div>
+                      <div className="text-sm text-gray-400">
+                        Player ID:
+                        {' '}
+                        {currentUser.data.playerId}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        Username:
+                        {' '}
+                        {currentUser.data.username || 'Not set'}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        Database ID:
+                        {' '}
+                        {currentUser.data.id}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

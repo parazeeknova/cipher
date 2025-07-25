@@ -3,8 +3,9 @@ import { pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   clerkId: varchar('clerk_id', { length: 255 }).unique().notNull(),
+  playerId: varchar('player_id', { length: 50 }).unique().notNull(),
   email: varchar('email', { length: 255 }).unique().notNull(),
-  username: varchar('username', { length: 50 }).unique().notNull(),
+  username: varchar('username', { length: 50 }).unique(),
   firstName: varchar('first_name', { length: 255 }),
   lastName: varchar('last_name', { length: 255 }),
   imageUrl: text('image_url'),
