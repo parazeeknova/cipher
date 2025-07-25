@@ -4,6 +4,7 @@ import { useSignIn, useSignUp, useUser } from '@clerk/nextjs'
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useForm } from '@tanstack/react-form'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -408,7 +409,7 @@ function OnboardingForm({ user, onComplete }: { user: any, onComplete: () => voi
 
         <div className="flex items-center gap-4 mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
           {user.imageUrl && (
-            <img
+            <Image
               src={user.imageUrl}
               alt="Profile"
               className="w-12 h-12 rounded-full border-2 border-white/20"
@@ -702,7 +703,7 @@ export default function Home() {
           100% {
             transform: translateX(100%);
           }
-        }
+        }https://github.com/parazeeknova/ThermoSense
 
         .animate-shimmer {
           animation: shimmer 2s infinite;

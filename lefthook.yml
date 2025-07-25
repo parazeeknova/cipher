@@ -1,0 +1,28 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: ESLint check
+      glob: '*.{js,ts,jsx,tsx,mjs}'
+      exclude:
+        - '.next/**'
+        - 'src/shadcn/**'
+        - 'node_modules/**'
+      run: npm run lint
+      stage_fixed: true
+
+    - name: ESLint fix
+      glob: '*.{js,ts,jsx,tsx,mjs}'
+      exclude:
+        - '.next/**'
+        - 'src/shadcn/**'
+        - 'node_modules/**'
+      run: npm run lint:fix
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: Full ESLint check
+      run: npm run lint
+
+    - name: TypeScript check
+      run: npx tsc --noEmit
