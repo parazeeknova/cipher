@@ -350,7 +350,6 @@ function Scene({ showCipher = true }: { showCipher?: boolean }) {
 
 function GoogleAuthButton({ onSuccess: _onSuccess }: { onSuccess: () => void }) {
   const { signUp, isLoaded: signUpLoaded } = useSignUp()
-  // eslint-disable-next-line unused-imports/no-unused-vars
   const { signIn, isLoaded: signInLoaded } = useSignIn()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -366,7 +365,34 @@ function GoogleAuthButton({ onSuccess: _onSuccess }: { onSuccess: () => void }) 
     setError(null)
 
     try {
-      if (signUp) {
+      // Try sign-in first for existing users (better for logout/login flow)
+      if (signIn) {
+        try {
+          await signIn.authenticateWithRedirect({
+            strategy: 'oauth_google',
+            redirectUrl: window.location.origin,
+            redirectUrlComplete: window.location.origin,
+          })
+        }
+        catch (signInError: any) {
+          // If sign-in fails because user doesn't exist, try sign-up
+          if (signUp && (
+            signInError?.message?.includes('identifier_not_found')
+            || signInError?.message?.includes('not_found')
+            || signInError?.message?.includes('no_account_found')
+          )) {
+            await signUp.authenticateWithRedirect({
+              strategy: 'oauth_google',
+              redirectUrl: window.location.origin,
+              redirectUrlComplete: window.location.origin,
+            })
+            return
+          }
+          throw signInError
+        }
+      }
+      else if (signUp) {
+        // Fallback to sign-up if sign-in is not available
         await signUp.authenticateWithRedirect({
           strategy: 'oauth_google',
           redirectUrl: window.location.origin,
@@ -385,6 +411,12 @@ function GoogleAuthButton({ onSuccess: _onSuccess }: { onSuccess: () => void }) 
       }
       else if (error?.message?.includes('redirect')) {
         errorMessage = 'Redirect configuration issue'
+      }
+      else if (error?.message?.includes('identifier_already_exists')) {
+        errorMessage = 'This Google account is already registered. Please try refreshing the page.'
+      }
+      else if (error?.message?.includes('session_exists')) {
+        errorMessage = 'You are already signed in. Please refresh the page.'
       }
       else if (error?.message) {
         errorMessage = error.message
