@@ -148,7 +148,7 @@ export default function GamePage() {
     name: player.username || `${player.firstName} ${player.lastName}`.trim() || 'Anonymous',
     points: player.points,
     rank: player.rank,
-    status: player.status,
+    status: (player.status === 'online' || player.status === 'away' || player.status === 'offline') ? player.status : 'online',
   })) || []
 
   const currentPlayer = {

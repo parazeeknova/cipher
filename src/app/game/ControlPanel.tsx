@@ -1,5 +1,7 @@
 'use client'
+import { useClerk } from '@clerk/nextjs'
 import { Bell, HelpCircle, LogOut, Settings, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/shadcn/ui/button'
 
 interface ControlPanelProps {
@@ -7,10 +9,22 @@ interface ControlPanelProps {
 }
 
 export function ControlPanel({ buttonGlitch }: ControlPanelProps) {
+  const { signOut } = useClerk()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/')
+  }
+
+  const handleHelp = () => {
+    router.push('/rules')
+  }
+
   const buttons = [
-    { icon: <LogOut className="w-5 h-5" />, label: 'Logout', index: 0 },
+    { icon: <LogOut className="w-5 h-5" />, label: 'Logout', index: 0, onClick: handleLogout },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', index: 1 },
-    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help', index: 2 },
+    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help', index: 2, onClick: handleHelp },
     { icon: <Bell className="w-5 h-5" />, label: 'Alerts', index: 3 },
   ]
   return (
@@ -29,6 +43,7 @@ export function ControlPanel({ buttonGlitch }: ControlPanelProps) {
             className={`h-full flex flex-col items-center justify-center gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 font-mono rounded-xl relative ${
               buttonGlitch === item.index ? 'animate-pulse border-red-500/50 bg-red-500/10' : ''
             }`}
+            onClick={item.onClick}
           >
             {item.icon}
             <span className="text-xs">{item.label}</span>
