@@ -128,6 +128,79 @@ export const appRouter = router({
       }
     }),
 
+  onboardUser: protectedProcedure
+    .input(z.object({
+      username: z.string().min(3).max(50),
+      email: z.string().email(),
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      imageUrl: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Check if username is already taken
+        const existingUser = await ctx.db.select().from(users).where(eq(users.username, input.username))
+        if (existingUser.length > 0) {
+          throw new Error('Username already exists')
+        }
+
+        // Check if user already exists
+        const existingUserByClerkId = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
+        if (existingUserByClerkId.length > 0) {
+          // Update existing user with username
+          const updatedUser = await ctx.db
+            .update(users)
+            .set({
+              username: input.username,
+              firstName: input.firstName,
+              lastName: input.lastName,
+              imageUrl: input.imageUrl,
+            })
+            .where(eq(users.clerkId, ctx.userId))
+            .returning()
+
+          return updatedUser[0]
+        }
+
+        let playerId = generatePlayerId()
+        let attempts = 0
+        const maxAttempts = 10
+
+        while (attempts < maxAttempts) {
+          const playerIdExists = await ctx.db.select().from(users).where(eq(users.playerId, playerId))
+          if (playerIdExists.length === 0) {
+            break
+          }
+          playerId = generatePlayerId()
+          attempts++
+        }
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Failed to generate unique player ID')
+        }
+
+        const userValues = {
+          clerkId: ctx.userId,
+          playerId,
+          username: input.username,
+          email: input.email,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          imageUrl: input.imageUrl,
+        }
+
+        const user = await ctx.db.insert(users).values(userValues).returning()
+
+        return user[0]
+      }
+      catch (error) {
+        if (error instanceof Error) {
+          throw error
+        }
+        throw new Error('Failed to onboard user')
+      }
+    }),
+
   getUser: protectedProcedure
     .query(async ({ ctx }) => {
       const user = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
@@ -155,7 +228,7 @@ export const appRouter = router({
   createGameSession: protectedProcedure
     .input(z.object({
       name: z.string(),
-      settings: z.record(z.any()).optional(),
+      settings: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const session = await ctx.db.insert(gameSessions).values({
@@ -179,8 +252,10 @@ export const appRouter = router({
         .select()
         .from(playerStats)
         .where(
-          eq(playerStats.userId, user[0].id)
-          && eq(playerStats.gameSessionId, input.gameSessionId),
+          and(
+            eq(playerStats.userId, user[0].id),
+            eq(playerStats.gameSessionId, input.gameSessionId),
+          ),
         )
 
       return stats[0] || null
@@ -235,8 +310,10 @@ export const appRouter = router({
         })
         .from(playerActions)
         .where(
-          eq(playerActions.userId, user[0].id)
-          && eq(playerActions.gameSessionId, input.gameSessionId),
+          and(
+            eq(playerActions.userId, user[0].id),
+            eq(playerActions.gameSessionId, input.gameSessionId),
+          ),
         )
         .orderBy(desc(playerActions.createdAt))
         .limit(input.limit)
@@ -338,7 +415,7 @@ export const appRouter = router({
       target: z.string().optional(),
       pointsEarned: z.number().optional().default(0),
       challengeId: z.number().optional(),
-      metadata: z.record(z.any()).optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const user = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
@@ -364,7 +441,7 @@ export const appRouter = router({
       gameSessionId: z.number(),
       points: z.number().optional(),
       status: z.enum(['online', 'away', 'offline']).optional(),
-      lifelines: z.record(z.number()).optional(),
+      lifelines: z.record(z.string(), z.number()).optional(),
       currentStreak: z.number().optional(),
       level: z.number().optional(),
     }))
@@ -500,8 +577,10 @@ export const appRouter = router({
           .select()
           .from(playerStats)
           .where(
-            eq(playerStats.userId, user[0].id)
-            && eq(playerStats.gameSessionId, input.gameSessionId),
+            and(
+              eq(playerStats.userId, user[0].id),
+              eq(playerStats.gameSessionId, input.gameSessionId),
+            ),
           )
 
         if (currentStats.length > 0) {

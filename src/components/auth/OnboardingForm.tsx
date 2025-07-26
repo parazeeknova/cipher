@@ -6,7 +6,17 @@ import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc/client'
 import { GlassmorphicSpinner } from '../ui/GlassmorphicComponents'
 
-export function OnboardingForm({ user, onComplete }: { user: any, onComplete: () => void }) {
+interface ClerkUser {
+  id: string
+  firstName?: string | null
+  lastName?: string | null
+  imageUrl?: string | null
+  primaryEmailAddress?: {
+    emailAddress?: string | null
+  } | null
+}
+
+export function OnboardingForm({ user, onComplete }: { user: ClerkUser, onComplete: () => void }) {
   const router = useRouter()
   const utils = trpc.useUtils()
 
