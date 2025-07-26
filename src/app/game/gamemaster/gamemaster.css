@@ -1,0 +1,431 @@
+/* Gamemaster Dashboard Styles */
+
+.gamemaster-root {
+	font-family: "JetBrains Mono", "Courier New", monospace;
+}
+
+/* Header Spacing */
+.gamemaster-header {
+	min-height: 6rem;
+}
+
+.gamemaster-header .backdrop-blur-xl {
+	padding-bottom: 2rem;
+}
+
+/* Glitch Effects */
+.glitch-text {
+	position: relative;
+}
+
+.glitch-text.glitch-active .glitch-layer-1 {
+	animation: glitch-1 0.3s infinite;
+}
+
+.glitch-text.glitch-active .glitch-layer-2 {
+	animation: glitch-2 0.3s infinite;
+}
+
+@keyframes glitch-1 {
+	0%,
+	100% {
+		transform: translate(0);
+	}
+	20% {
+		transform: translate(-2px, 2px);
+	}
+	40% {
+		transform: translate(-2px, -2px);
+	}
+	60% {
+		transform: translate(2px, 2px);
+	}
+	80% {
+		transform: translate(2px, -2px);
+	}
+}
+
+@keyframes glitch-2 {
+	0%,
+	100% {
+		transform: translate(0);
+	}
+	20% {
+		transform: translate(2px, -2px);
+	}
+	40% {
+		transform: translate(2px, 2px);
+	}
+	60% {
+		transform: translate(-2px, -2px);
+	}
+	80% {
+		transform: translate(-2px, 2px);
+	}
+}
+
+/* Scan Lines */
+.scan-line {
+	animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+	0% {
+		left: -8px;
+	}
+	100% {
+		left: 100%;
+	}
+}
+
+.scan-line-button {
+	animation: scan-button 2s linear infinite;
+}
+
+@keyframes scan-button {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.scan-horizontal-slow {
+	animation: scan-horizontal 8s linear infinite;
+}
+
+@keyframes scan-horizontal {
+	0% {
+		top: -2px;
+	}
+	100% {
+		top: 100%;
+	}
+}
+
+.scan-vertical-slow {
+	animation: scan-vertical 6s linear infinite;
+}
+
+@keyframes scan-vertical {
+	0% {
+		left: -2px;
+	}
+	100% {
+		left: 100%;
+	}
+}
+
+/* Matrix Effects */
+.matrix-fall-0 {
+	animation: matrix-fall 4s linear infinite;
+}
+.matrix-fall-1 {
+	animation: matrix-fall 4.2s linear infinite;
+}
+.matrix-fall-2 {
+	animation: matrix-fall 3.8s linear infinite;
+}
+.matrix-fall-3 {
+	animation: matrix-fall 4.5s linear infinite;
+}
+.matrix-fall-4 {
+	animation: matrix-fall 3.5s linear infinite;
+}
+.matrix-fall-5 {
+	animation: matrix-fall 4.1s linear infinite;
+}
+.matrix-fall-6 {
+	animation: matrix-fall 3.9s linear infinite;
+}
+.matrix-fall-7 {
+	animation: matrix-fall 4.3s linear infinite;
+}
+.matrix-fall-8 {
+	animation: matrix-fall 3.7s linear infinite;
+}
+.matrix-fall-9 {
+	animation: matrix-fall 4.4s linear infinite;
+}
+.matrix-fall-10 {
+	animation: matrix-fall 3.6s linear infinite;
+}
+.matrix-fall-11 {
+	animation: matrix-fall 4.6s linear infinite;
+}
+
+@keyframes matrix-fall {
+	0% {
+		transform: translateY(-100vh);
+		opacity: 0;
+	}
+	10% {
+		opacity: 1;
+	}
+	90% {
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(100vh);
+		opacity: 0;
+	}
+}
+
+/* Floating Elements */
+.float-0 {
+	animation: float-0 6s ease-in-out infinite;
+}
+.float-1 {
+	animation: float-1 7s ease-in-out infinite;
+}
+.float-2 {
+	animation: float-2 5s ease-in-out infinite;
+}
+.float-3 {
+	animation: float-3 8s ease-in-out infinite;
+}
+.float-4 {
+	animation: float-4 6.5s ease-in-out infinite;
+}
+.float-5 {
+	animation: float-5 7.5s ease-in-out infinite;
+}
+.float-6 {
+	animation: float-6 5.5s ease-in-out infinite;
+}
+.float-7 {
+	animation: float-7 8.5s ease-in-out infinite;
+}
+
+@keyframes float-0 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-20px) rotate(180deg);
+	}
+}
+
+@keyframes float-1 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-15px) rotate(-180deg);
+	}
+}
+
+@keyframes float-2 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-25px) rotate(90deg);
+	}
+}
+
+@keyframes float-3 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-18px) rotate(-90deg);
+	}
+}
+
+@keyframes float-4 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-22px) rotate(270deg);
+	}
+}
+
+@keyframes float-5 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-16px) rotate(-270deg);
+	}
+}
+
+@keyframes float-6 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-24px) rotate(45deg);
+	}
+}
+
+@keyframes float-7 {
+	0%,
+	100% {
+		transform: translateY(0px) rotate(0deg);
+	}
+	50% {
+		transform: translateY(-19px) rotate(-45deg);
+	}
+}
+
+/* Spinning Elements */
+.spin-slow {
+	animation: spin-slow 8s linear infinite;
+}
+
+@keyframes spin-slow {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Data Stream */
+.data-stream {
+	animation: data-stream 4s linear infinite;
+}
+
+@keyframes data-stream {
+	0% {
+		opacity: 0.3;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.3;
+	}
+}
+
+.packet-flow {
+	animation: packet-flow 3s linear infinite;
+}
+
+@keyframes packet-flow {
+	0% {
+		top: -4px;
+		opacity: 0;
+	}
+	10% {
+		opacity: 1;
+	}
+	90% {
+		opacity: 1;
+	}
+	100% {
+		top: 100%;
+		opacity: 0;
+	}
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.hide-mobile {
+		display: none;
+	}
+
+	.gamemaster-sidebar {
+		width: 200px;
+		top: 7rem;
+	}
+
+	.gamemaster-content {
+		left: 208px;
+		top: 7rem;
+	}
+
+	.gamemaster-header {
+		padding-bottom: 2rem;
+	}
+}
+
+@media (max-width: 640px) {
+	.gamemaster-sidebar {
+		position: fixed;
+		left: -256px;
+		top: 7rem;
+		transition: left 0.3s ease;
+		z-index: 50;
+	}
+
+	.gamemaster-sidebar.open {
+		left: 4px;
+	}
+
+	.gamemaster-content {
+		left: 4px;
+		top: 7rem;
+	}
+
+	.gamemaster-header {
+		padding-bottom: 1.5rem;
+	}
+}
+
+/* Custom Scrollbar */
+.gamemaster-root ::-webkit-scrollbar {
+	width: 8px;
+}
+
+.gamemaster-root ::-webkit-scrollbar-track {
+	background: rgba(55, 65, 81, 0.1);
+	border-radius: 4px;
+}
+
+.gamemaster-root ::-webkit-scrollbar-thumb {
+	background: rgba(156, 163, 175, 0.3);
+	border-radius: 4px;
+}
+
+.gamemaster-root ::-webkit-scrollbar-thumb:hover {
+	background: rgba(156, 163, 175, 0.5);
+}
+
+/* Animation Delays */
+.animation-delay-2000 {
+	animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+	animation-delay: 4s;
+}
+
+/* Pulsing Elements */
+.pulse-slow {
+	animation: pulse-slow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+	0%,
+	100% {
+		opacity: 0.5;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+/* Status Indicators */
+.status-active {
+	box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.status-paused {
+	box-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
+}
+
+.status-waiting {
+	box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
