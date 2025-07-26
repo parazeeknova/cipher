@@ -177,9 +177,17 @@ export function PlayerUIBar() {
     }
   }
 
-  const currentRank = leaderboard && playerStats
-    ? (leaderboard.findIndex(player => player.userId === playerStats.userId) + 1) || 0
-    : 0
+  const currentPlayer = leaderboard && playerStats
+    ? leaderboard.find(player => player.userId === playerStats.userId)
+    : null
+
+  const currentRank = currentPlayer?.rank || 0
+  const currentPoints = currentPlayer?.points || 0
+
+  // Check if current player is tied with others
+  const isTied = leaderboard
+    ? leaderboard.filter(player => player.points === currentPoints).length > 1
+    : false
 
   const lifelines = playerStats?.lifelines as Record<string, number> || {}
 
@@ -190,7 +198,10 @@ export function PlayerUIBar() {
   const imageUrl = user?.imageUrl
 
   return (
-    <div className="relative backdrop-blur-xl bg-gray-900/40 border border-gray-800/50 rounded-2xl p-4 shadow-2xl min-w-0">
+    <div className={`relative backdrop-blur-xl bg-gray-900/40 border border-gray-800/50 rounded-2xl p-4 shadow-2xl min-w-0 ${
+      isTied && currentRank > 0 ? 'ring-1 ring-yellow-400/30 bg-yellow-500/5' : ''
+    }`}
+    >
       {/* Player Stats Grid - Optimized for PC */}
       <div className="grid grid-cols-5 gap-6 min-w-0">
         {/* Player Info */}
@@ -237,10 +248,19 @@ export function PlayerUIBar() {
         {/* Points */}
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <Trophy className="w-4 h-4 text-white animate-pulse" />
-            <span className="text-white font-mono text-lg font-bold">
+            <Trophy className={`w-4 h-4 animate-pulse ${
+              isTied && currentRank > 0 ? 'text-yellow-400' : 'text-white'
+            }`}
+            />
+            <span className={`font-mono text-lg font-bold ${
+              isTied && currentRank > 0 ? 'text-yellow-300' : 'text-white'
+            }`}
+            >
               {(playerStats?.points || 0).toLocaleString()}
             </span>
+            {isTied && currentRank > 0 && (
+              <span className="text-yellow-400 text-xs animate-pulse font-bold">TIED</span>
+            )}
           </div>
           <p className="text-gray-400 font-mono text-xs">POINTS</p>
         </div>
@@ -251,9 +271,14 @@ export function PlayerUIBar() {
             <div className="text-white font-mono text-lg font-bold animate-pulse">
               #
               {currentRank || '--'}
+              {isTied && currentRank > 0 && (
+                <span className="text-yellow-400 text-sm ml-1 animate-pulse font-bold">T</span>
+              )}
             </div>
           </div>
-          <p className="text-gray-400 font-mono text-xs">RANK</p>
+          <p className="text-gray-400 font-mono text-xs">
+            {isTied && currentRank > 0 ? 'RANK (TIED)' : 'RANK'}
+          </p>
         </div>
 
         {/* Time Left */}

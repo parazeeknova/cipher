@@ -156,7 +156,7 @@ export function GamemasterClient() {
               </div>
               <div className="w-px h-4 bg-gray-600"></div>
               <div className="flex items-center gap-2">
-                <span className="text-white font-mono text-lg font-bold">30</span>
+                <span className="text-white font-mono text-lg font-bold">3</span>
                 <span className="text-gray-400 font-mono text-sm">players online</span>
               </div>
               <div className="w-px h-4 bg-gray-600"></div>

@@ -267,27 +267,120 @@ export const appRouter = router({
       gameSessionId: z.number(),
     }))
     .query(async ({ ctx, input }) => {
+      // Get all users and their stats (if they exist)
       const leaderboard = await ctx.db
         .select({
-          id: playerStats.id,
-          userId: playerStats.userId,
-          points: playerStats.points,
-          rank: playerStats.rank,
-          status: playerStats.status,
+          id: users.id,
+          userId: users.id,
+          points: sql<number>`COALESCE(${playerStats.points}, 0)`.as('points'),
+          status: sql<string>`COALESCE(${playerStats.status}, 'offline')`.as('status'),
           username: users.username,
           firstName: users.firstName,
           lastName: users.lastName,
+          imageUrl: users.imageUrl,
+          playerStatsId: playerStats.id,
         })
-        .from(playerStats)
-        .innerJoin(users, eq(playerStats.userId, users.id))
-        .where(eq(playerStats.gameSessionId, input.gameSessionId))
-        .orderBy(desc(playerStats.points))
+        .from(users)
+        .leftJoin(playerStats, and(
+          eq(playerStats.userId, users.id),
+          eq(playerStats.gameSessionId, input.gameSessionId),
+        ))
+        .orderBy(sql`COALESCE(${playerStats.points}, 0) DESC`)
 
-      // Calculate ranks
-      return leaderboard.map((player, index) => ({
-        ...player,
-        rank: index + 1,
-      }))
+      // Auto-create player stats for users who don't have them
+      const usersWithoutStats = leaderboard.filter(player => !player.playerStatsId)
+
+      if (usersWithoutStats.length > 0) {
+        await Promise.all(
+          usersWithoutStats.map(user =>
+            ctx.db.insert(playerStats).values({
+              userId: user.userId,
+              gameSessionId: input.gameSessionId,
+              points: 0,
+              status: 'offline',
+              lifelines: { snitch: 2, sabotage: 1, boost: 1, intel: 3 },
+              currentStreak: 0,
+              level: 1,
+            }).onConflictDoNothing(),
+          ),
+        )
+
+        // Re-fetch the leaderboard with the newly created stats
+        const updatedLeaderboard = await ctx.db
+          .select({
+            id: users.id,
+            userId: users.id,
+            points: sql<number>`COALESCE(${playerStats.points}, 0)`.as('points'),
+            status: sql<string>`COALESCE(${playerStats.status}, 'offline')`.as('status'),
+            username: users.username,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            imageUrl: users.imageUrl,
+            playerStatsId: playerStats.id,
+          })
+          .from(users)
+          .leftJoin(playerStats, and(
+            eq(playerStats.userId, users.id),
+            eq(playerStats.gameSessionId, input.gameSessionId),
+          ))
+          .orderBy(sql`COALESCE(${playerStats.points}, 0) DESC`)
+
+        // Calculate ranks with proper tie handling
+        let currentRank = 1
+        let previousPoints: number | null = null
+        let playersAtCurrentRank = 0
+
+        return updatedLeaderboard.map((player, _index) => {
+          const points = Number(player.points) || 0
+
+          if (previousPoints !== null && points < previousPoints) {
+            // Points decreased, so rank increases by the number of players at the previous rank
+            currentRank += playersAtCurrentRank
+            playersAtCurrentRank = 1
+          }
+          else if (previousPoints === null || points === previousPoints) {
+            // First player or same points as previous player (tie)
+            playersAtCurrentRank++
+          }
+
+          previousPoints = points
+
+          return {
+            ...player,
+            rank: currentRank,
+            points,
+            status: player.status as 'online' | 'away' | 'offline',
+          }
+        })
+      }
+
+      // Calculate ranks with proper tie handling
+      let currentRank = 1
+      let previousPoints: number | null = null
+      let playersAtCurrentRank = 0
+
+      return leaderboard.map((player, _index) => {
+        const points = Number(player.points) || 0
+
+        if (previousPoints !== null && points < previousPoints) {
+          // Points decreased, so rank increases by the number of players at the previous rank
+          currentRank += playersAtCurrentRank
+          playersAtCurrentRank = 1
+        }
+        else if (previousPoints === null || points === previousPoints) {
+          // First player or same points as previous player (tie)
+          playersAtCurrentRank++
+        }
+
+        previousPoints = points
+
+        return {
+          ...player,
+          rank: currentRank,
+          points,
+          status: player.status as 'online' | 'away' | 'offline',
+        }
+      })
     }),
 
   getPlayerActions: protectedProcedure
@@ -343,7 +436,7 @@ export const appRouter = router({
         .orderBy(desc(chatMessages.createdAt))
         .limit(input.limit)
 
-      return messages.reverse() // Show oldest first
+      return messages.reverse()
     }),
 
   sendChatMessage: protectedProcedure
@@ -678,6 +771,229 @@ export const appRouter = router({
         isCorrect,
         pointsAwarded,
       }
+    }),
+
+  // Player interaction procedures
+  sabotagePlayer: protectedProcedure
+    .input(z.object({
+      gameSessionId: z.number(),
+      targetUserId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
+      if (!user[0])
+        throw new Error('User not found')
+
+      // Get target player stats
+      const targetStats = await ctx.db
+        .select()
+        .from(playerStats)
+        .where(
+          and(
+            eq(playerStats.userId, input.targetUserId),
+            eq(playerStats.gameSessionId, input.gameSessionId),
+          ),
+        )
+
+      if (!targetStats[0])
+        throw new Error('Target player not found')
+
+      // Calculate 25% point loss
+      const pointsToLose = Math.floor(targetStats[0].points * 0.25)
+      const newPoints = Math.max(0, targetStats[0].points - pointsToLose)
+
+      // Update target player points
+      await ctx.db
+        .update(playerStats)
+        .set({
+          points: newPoints,
+          lastActiveAt: new Date(),
+        })
+        .where(and(
+          eq(playerStats.userId, input.targetUserId),
+          eq(playerStats.gameSessionId, input.gameSessionId),
+        ))
+
+      // Record the sabotage action
+      await ctx.db.insert(playerActions).values({
+        userId: user[0].id,
+        gameSessionId: input.gameSessionId,
+        actionType: 'used_lifeline',
+        result: 'success',
+        target: `sabotage_user_${input.targetUserId}`,
+        pointsEarned: 0,
+        metadata: {
+          lifelineType: 'sabotage',
+          targetUserId: input.targetUserId,
+          pointsLost: pointsToLose,
+        },
+      })
+
+      return {
+        success: true,
+        pointsLost: pointsToLose,
+        targetNewPoints: newPoints,
+      }
+    }),
+
+  getPlayerDetails: protectedProcedure
+    .input(z.object({
+      gameSessionId: z.number(),
+      targetUserId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const targetUser = await ctx.db
+        .select({
+          id: users.id,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          imageUrl: users.imageUrl,
+        })
+        .from(users)
+        .where(eq(users.id, input.targetUserId))
+
+      if (!targetUser[0])
+        throw new Error('User not found')
+
+      const targetStats = await ctx.db
+        .select()
+        .from(playerStats)
+        .where(
+          and(
+            eq(playerStats.userId, input.targetUserId),
+            eq(playerStats.gameSessionId, input.gameSessionId),
+          ),
+        )
+
+      // Get recent actions for this player
+      const recentActions = await ctx.db
+        .select({
+          actionType: playerActions.actionType,
+          result: playerActions.result,
+          pointsEarned: playerActions.pointsEarned,
+          createdAt: playerActions.createdAt,
+        })
+        .from(playerActions)
+        .where(
+          and(
+            eq(playerActions.userId, input.targetUserId),
+            eq(playerActions.gameSessionId, input.gameSessionId),
+          ),
+        )
+        .orderBy(desc(playerActions.createdAt))
+        .limit(5)
+
+      return {
+        user: targetUser[0],
+        stats: targetStats[0] || null,
+        recentActions,
+      }
+    }),
+
+  getTopPlayersDetails: protectedProcedure
+    .input(z.object({
+      gameSessionId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const topPlayers = await ctx.db
+        .select({
+          userId: playerStats.userId,
+          points: playerStats.points,
+          rank: playerStats.rank,
+          status: playerStats.status,
+          round1Points: playerStats.round1Points,
+          round2Points: playerStats.round2Points,
+          round3Points: playerStats.round3Points,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        })
+        .from(playerStats)
+        .innerJoin(users, eq(playerStats.userId, users.id))
+        .where(eq(playerStats.gameSessionId, input.gameSessionId))
+        .orderBy(desc(playerStats.points))
+        .limit(3)
+
+      // Get recent actions for each top player
+      const playersWithActions = await Promise.all(
+        topPlayers.map(async (player) => {
+          const recentActions = await ctx.db
+            .select({
+              actionType: playerActions.actionType,
+              result: playerActions.result,
+              pointsEarned: playerActions.pointsEarned,
+              createdAt: playerActions.createdAt,
+            })
+            .from(playerActions)
+            .where(
+              and(
+                eq(playerActions.userId, player.userId),
+                eq(playerActions.gameSessionId, input.gameSessionId),
+              ),
+            )
+            .orderBy(desc(playerActions.createdAt))
+            .limit(3)
+
+          return {
+            ...player,
+            recentActions,
+          }
+        }),
+      )
+
+      return playersWithActions
+    }),
+
+  grantUnderdogTokens: protectedProcedure
+    .input(z.object({
+      gameSessionId: z.number(),
+      targetUserIds: z.array(z.number()),
+      tokenCount: z.number().default(3),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
+      if (!user[0])
+        throw new Error('User not found')
+
+      // Update each target user's stats to add underdog tokens
+      const results = await Promise.all(
+        input.targetUserIds.map(async (targetUserId) => {
+          const targetStats = await ctx.db
+            .select()
+            .from(playerStats)
+            .where(
+              and(
+                eq(playerStats.userId, targetUserId),
+                eq(playerStats.gameSessionId, input.gameSessionId),
+              ),
+            )
+
+          if (targetStats[0]) {
+            const currentLifelines = targetStats[0].lifelines as Record<string, number> || {}
+            const newLifelines = {
+              ...currentLifelines,
+              underdog: (currentLifelines.underdog || 0) + input.tokenCount,
+            }
+
+            await ctx.db
+              .update(playerStats)
+              .set({
+                lifelines: newLifelines,
+                lastActiveAt: new Date(),
+              })
+              .where(and(
+                eq(playerStats.userId, targetUserId),
+                eq(playerStats.gameSessionId, input.gameSessionId),
+              ))
+
+            return { userId: targetUserId, tokensGranted: input.tokenCount }
+          }
+          return null
+        }),
+      )
+
+      return results.filter(Boolean)
     }),
 })
 

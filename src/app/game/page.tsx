@@ -25,11 +25,6 @@ export default function GamePage() {
     { enabled: !!gameSession?.id },
   )
 
-  const { data: leaderboard, isLoading: leaderboardLoading } = trpc.getLeaderboard.useQuery(
-    { gameSessionId: gameSession?.id || 0 },
-    { enabled: !!gameSession?.id },
-  )
-
   const { data: playerActions, isLoading: actionsLoading } = trpc.getPlayerActions.useQuery(
     { gameSessionId: gameSession?.id || 0, limit: 50 },
     { enabled: !!gameSession?.id },
@@ -57,14 +52,13 @@ export default function GamePage() {
 
   useEffect(() => {
     const playerGlitchInterval = setInterval(() => {
-      if (leaderboard && leaderboard.length > 0) {
-        const randomPlayer = Math.floor(Math.random() * leaderboard.length)
-        setPlayerGlitch(randomPlayer)
-        setTimeout(() => setPlayerGlitch(null), 300)
-      }
+      // Generate random player index for glitch effect (0-9 for up to 10 players)
+      const randomPlayer = Math.floor(Math.random() * 10)
+      setPlayerGlitch(randomPlayer)
+      setTimeout(() => setPlayerGlitch(null), 300)
     }, 3000)
     return () => clearInterval(playerGlitchInterval)
-  }, [leaderboard])
+  }, [])
 
   useEffect(() => {
     const buttonGlitchInterval = setInterval(() => {
@@ -101,7 +95,7 @@ export default function GamePage() {
     }
   }
 
-  if (sessionLoading || statsLoading || leaderboardLoading || actionsLoading || chatLoading || notificationsLoading) {
+  if (sessionLoading || statsLoading || actionsLoading || chatLoading || notificationsLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white font-mono text-lg animate-pulse">
@@ -141,14 +135,6 @@ export default function GamePage() {
     type: notif.type === 'error' ? 'warning' : notif.type,
     message: notif.message,
     time: new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  })) || []
-
-  const transformedLeaderboard = leaderboard?.map(player => ({
-    id: player.userId,
-    name: player.username || `${player.firstName} ${player.lastName}`.trim() || 'Anonymous',
-    points: player.points,
-    rank: player.rank,
-    status: (player.status === 'online' || player.status === 'away' || player.status === 'offline') ? player.status : 'online',
   })) || []
 
   return (
@@ -210,7 +196,7 @@ export default function GamePage() {
         <MainGameArea glitchEffect={glitchEffect} />
       </div>
       <div className="absolute top-4 right-4 w-72 bottom-56 z-20">
-        <Leaderboard players={transformedLeaderboard} playerGlitch={playerGlitch} />
+        <Leaderboard playerGlitch={playerGlitch} />
       </div>
       <div className="absolute bottom-4 right-4 w-72 h-48 z-20 mt-3">
         <ControlPanel buttonGlitch={buttonGlitch} />
