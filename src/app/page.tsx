@@ -91,7 +91,7 @@ export default function Home() {
       const timer = setTimeout(() => {
         if (existingUser.data) {
           if (existingUser.data.username) {
-            router.push('/dashboard')
+            router.push('/game')
           }
           else {
             setCurrentView('onboarding')
@@ -114,7 +114,7 @@ export default function Home() {
   }
 
   const handleOnboardingComplete = () => {
-    router.push('/dashboard')
+    router.push('/game')
   }
 
   const handleBackToHome = () => {
