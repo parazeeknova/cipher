@@ -12,6 +12,7 @@ import {
   users,
 } from '../db/schema'
 import { generatePlayerId } from '../utils/player-id'
+import { gamesRouter } from './routers/games'
 import { protectedProcedure, publicProcedure, router } from './server'
 
 export const appRouter = router({
@@ -995,6 +996,9 @@ export const appRouter = router({
 
       return results.filter(Boolean)
     }),
+
+  // Games router
+  games: gamesRouter,
 })
 
 export type AppRouter = typeof appRouter

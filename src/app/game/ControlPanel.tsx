@@ -1,6 +1,6 @@
 'use client'
 import { useClerk } from '@clerk/nextjs'
-import { Bell, HelpCircle, LogOut, Settings, User } from 'lucide-react'
+import { HelpCircle, LogOut, Settings, Target, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/shadcn/ui/button'
 
@@ -21,11 +21,15 @@ export function ControlPanel({ buttonGlitch }: ControlPanelProps) {
     router.push('/rules')
   }
 
+  const handleRound1 = () => {
+    router.push('/game/round1')
+  }
+
   const buttons = [
-    { icon: <LogOut className="w-5 h-5" />, label: 'Logout', index: 0, onClick: handleLogout },
-    { icon: <Settings className="w-5 h-5" />, label: 'Settings', index: 1 },
-    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help', index: 2, onClick: handleHelp },
-    { icon: <Bell className="w-5 h-5" />, label: 'Alerts', index: 3 },
+    { icon: <Target className="w-5 h-5" />, label: 'Round 1', index: 0, onClick: handleRound1 },
+    { icon: <HelpCircle className="w-5 h-5" />, label: 'Help', index: 1, onClick: handleHelp },
+    { icon: <Settings className="w-5 h-5" />, label: 'Settings', index: 2 },
+    { icon: <LogOut className="w-5 h-5" />, label: 'Logout', index: 3, onClick: handleLogout },
   ]
   return (
     <div className="h-full backdrop-blur-xl bg-gray-900/40 border border-gray-800/50 rounded-2xl shadow-2xl overflow-hidden">
