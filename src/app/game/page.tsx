@@ -20,7 +20,7 @@ export default function GamePage() {
 
   const { data: gameSession, isLoading: sessionLoading } = trpc.getCurrentGameSession.useQuery()
 
-  const { data: playerStats, isLoading: statsLoading } = trpc.getPlayerStats.useQuery(
+  const { data: _playerStats, isLoading: statsLoading } = trpc.getPlayerStats.useQuery(
     { gameSessionId: gameSession?.id || 0 },
     { enabled: !!gameSession?.id },
   )
@@ -151,17 +151,6 @@ export default function GamePage() {
     status: (player.status === 'online' || player.status === 'away' || player.status === 'offline') ? player.status : 'online',
   })) || []
 
-  const currentPlayer = {
-    name: 'Player',
-    points: playerStats?.points || 0,
-    rank: playerStats?.rank || 0,
-    lifelines: (playerStats?.lifelines as any)?.snitch || 0,
-    hints: (playerStats?.lifelines as any)?.intel || 0,
-    timeLeft: '45:32',
-    streak: playerStats?.currentStreak || 0,
-    level: playerStats?.level || 1,
-  }
-
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-950">
@@ -227,7 +216,7 @@ export default function GamePage() {
         <ControlPanel buttonGlitch={buttonGlitch} />
       </div>
       <div className="absolute bottom-4 left-80 right-80 z-20">
-        <PlayerUIBar currentPlayer={currentPlayer} />
+        <PlayerUIBar />
       </div>
       <FloatingParticles />
     </div>

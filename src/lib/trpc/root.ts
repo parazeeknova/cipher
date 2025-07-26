@@ -5,6 +5,7 @@ import {
   challengeSubmissions,
   chatMessages,
   gameSessions,
+  lifelineUsage,
   notifications,
   playerActions,
   playerStats,
@@ -434,6 +435,81 @@ export const appRouter = router({
       }).returning()
 
       return action[0]
+    }),
+
+  useLifeline: protectedProcedure
+    .input(z.object({
+      gameSessionId: z.number(),
+      lifelineType: z.enum(['snitch', 'sabotage', 'boost', 'intel']),
+      targetUserId: z.number().optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
+      if (!user[0])
+        throw new Error('User not found')
+
+      // Get current player stats
+      const playerStatsData = await ctx.db
+        .select()
+        .from(playerStats)
+        .where(
+          and(
+            eq(playerStats.userId, user[0].id),
+            eq(playerStats.gameSessionId, input.gameSessionId),
+          ),
+        )
+
+      if (!playerStatsData[0])
+        throw new Error('Player stats not found')
+
+      const currentLifelines = playerStatsData[0].lifelines as Record<string, number> || {}
+      const currentCount = currentLifelines[input.lifelineType] || 0
+
+      if (currentCount <= 0)
+        throw new Error('No lifelines of this type remaining')
+
+      // Update lifelines count
+      const newLifelines = {
+        ...currentLifelines,
+        [input.lifelineType]: currentCount - 1,
+      }
+
+      // Update player stats
+      await ctx.db
+        .update(playerStats)
+        .set({
+          lifelines: newLifelines,
+          lastActiveAt: new Date(),
+        })
+        .where(and(
+          eq(playerStats.userId, user[0].id),
+          eq(playerStats.gameSessionId, input.gameSessionId),
+        ))
+
+      // Record lifeline usage
+      const lifelineUsageRecord = await ctx.db.insert(lifelineUsage).values({
+        userId: user[0].id,
+        gameSessionId: input.gameSessionId,
+        lifelineType: input.lifelineType,
+        targetUserId: input.targetUserId,
+        metadata: input.metadata,
+      }).returning()
+
+      // Record player action
+      await ctx.db.insert(playerActions).values({
+        userId: user[0].id,
+        gameSessionId: input.gameSessionId,
+        actionType: 'used_lifeline',
+        result: 'success',
+        target: input.lifelineType,
+        metadata: { lifelineType: input.lifelineType, ...input.metadata },
+      })
+
+      return {
+        lifelineUsage: lifelineUsageRecord[0],
+        remainingCount: currentCount - 1,
+      }
     }),
 
   updatePlayerStats: protectedProcedure
