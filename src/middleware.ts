@@ -2,12 +2,12 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 const isProtectedRoute = createRouteMatcher([
-  '/game(.*)',
 ])
 
 const isPublicRoute = createRouteMatcher([
   '/',
   '/api/trpc(.*)',
+  '/game(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {
