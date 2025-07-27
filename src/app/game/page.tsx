@@ -25,11 +25,6 @@ export default function GamePage() {
     { enabled: !!gameSession?.id },
   )
 
-  const { data: playerActions, isLoading: actionsLoading } = trpc.getPlayerActions.useQuery(
-    { gameSessionId: gameSession?.id || 0, limit: 50 },
-    { enabled: !!gameSession?.id },
-  )
-
   const { data: chatMessages, isLoading: chatLoading } = trpc.getChatMessages.useQuery(
     { gameSessionId: gameSession?.id || 0, limit: 100 },
     { enabled: !!gameSession?.id },
@@ -71,14 +66,13 @@ export default function GamePage() {
 
   useEffect(() => {
     const actionGlitchInterval = setInterval(() => {
-      if (playerActions && playerActions.length > 0) {
-        const randomAction = Math.floor(Math.random() * playerActions.length)
-        setActionGlitch(randomAction)
-        setTimeout(() => setActionGlitch(null), 400)
-      }
+      // Generate random action index for glitch effect (0-19 for up to 20 actions)
+      const randomAction = Math.floor(Math.random() * 20)
+      setActionGlitch(randomAction)
+      setTimeout(() => setActionGlitch(null), 400)
     }, 4000)
     return () => clearInterval(actionGlitchInterval)
-  }, [playerActions])
+  }, [])
 
   const sendMessage = async () => {
     if (newMessage.trim() && gameSession?.id) {
@@ -95,7 +89,7 @@ export default function GamePage() {
     }
   }
 
-  if (sessionLoading || statsLoading || actionsLoading || chatLoading || notificationsLoading) {
+  if (sessionLoading || statsLoading || chatLoading || notificationsLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white font-mono text-lg animate-pulse">
@@ -114,14 +108,6 @@ export default function GamePage() {
       </div>
     )
   }
-
-  const transformedPlayerActions = playerActions?.map(action => ({
-    id: action.id,
-    action: action.actionType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    target: action.target || 'Unknown',
-    result: action.result,
-    time: new Date(action.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  })) || []
 
   const transformedChatMessages = chatMessages?.map(msg => ({
     id: msg.id,
@@ -179,7 +165,7 @@ export default function GamePage() {
       <div className="absolute bottom-40 right-32 w-24 h-24 bg-red-500/5 rounded-full blur-2xl animate-bounce" />
       <div className="absolute top-1/2 left-10 w-16 h-16 bg-red-500/5 rounded-full blur-xl animate-ping" />
       <div className="absolute top-4 left-4 w-72 h-[55vh] z-20">
-        <ActionHistory playerActions={transformedPlayerActions} actionGlitch={actionGlitch} />
+        <ActionHistory gameSessionId={gameSession.id} actionGlitch={actionGlitch} />
       </div>
       <div className="absolute bottom-4 left-4 w-72 h-[40vh] z-20">
         <GlobalChat

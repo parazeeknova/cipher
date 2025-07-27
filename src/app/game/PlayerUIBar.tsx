@@ -240,6 +240,19 @@ export function PlayerUIBar() {
                 Level
                 {' '}
                 {playerStats?.level || 1}
+                {' '}
+                | Round
+                {' '}
+                {gameSession?.currentRound === 'round_1' ? '1' : gameSession?.currentRound === 'round_2' ? '2' : '3'}
+                {playerStats?.round2Points && playerStats.round2Points > 0 && (
+                  <>
+                    {' '}
+                    | R2:
+                    {' '}
+                    {playerStats.round2Points}
+                    pts
+                  </>
+                )}
               </p>
             </div>
           </div>

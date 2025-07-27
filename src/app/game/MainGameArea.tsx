@@ -9,13 +9,13 @@ import {
   ExternalLink,
   Eye,
   FileText,
+  Globe,
   Search,
   Sword,
   Target,
   Terminal,
   Trophy,
   Users,
-  Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
@@ -64,6 +64,10 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
     gameSessionId,
   })
 
+  const { data: gameProgressRound2 } = trpc.games.getGameProgressRound2.useQuery({
+    gameSessionId,
+  })
+
   const rounds = [
     {
       id: 'round1',
@@ -87,19 +91,19 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
     {
       id: 'round2',
       title: 'Round 2: Director\'s Game',
-      subtitle: 'Player-Created Content',
-      description: 'The Round 1 winner designs challenges while trying to maintain their lead.',
+      subtitle: 'Control & Chaos',
+      description: 'The Round 1 winner selects 2 out of 3 games for all players to compete in.',
       icon: <Crown className="w-8 h-8" />,
-      status: 'locked',
-      progress: '0/8',
-      points: '0/300',
-      color: 'border-yellow-500/50 bg-yellow-500/10',
+      status: 'active',
+      progress: gameProgressRound2 ? `${gameProgressRound2.gamesCompleted}/3` : '0/3',
+      points: gameProgressRound2 ? `${gameProgressRound2.totalPoints}/∞` : '0/∞',
+      color: 'border-purple-500/50 bg-purple-500/10',
       games: [
-        { icon: <Users className="w-4 h-4" />, name: 'Competitive Challenges', points: 50, target: 'competitive_challenge' },
-        { icon: <Zap className="w-4 h-4" />, name: 'Chaos Challenges', points: 40, target: 'chaos_challenge' },
-        { icon: <Crown className="w-4 h-4" />, name: 'Director\'s Custom Games', points: 60, target: 'director_custom' },
+        { icon: <Users className="w-4 h-4" />, name: 'Curse Distribution (Auction)', points: 'Variable', target: 'curse_distribution_game' },
+        { icon: <Crown className="w-4 h-4" />, name: 'Pandora\'s Box', points: '±100/±50', target: 'pandoras_box_game' },
+        { icon: <Globe className="w-4 h-4" />, name: 'Equi Blessing', points: '+10 All', target: 'equi_blessing_game' },
       ],
-      action: () => {},
+      action: () => window.open('/game/round2', '_blank'),
     },
     {
       id: 'round3',
@@ -233,8 +237,17 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               {round.games.map((game, gameIndex) => {
-                                const isCompleted = gameProgress?.completedGames?.includes(game.target) || false
-                                const attemptData = gameProgress?.attemptCounts?.[game.target]
+                                let isCompleted = false
+                                let attemptData = null
+
+                                if (round.id === 'round1' && gameProgress) {
+                                  isCompleted = gameProgress.completedGames?.includes(game.target) || false
+                                  attemptData = gameProgress.attemptCounts?.[game.target]
+                                }
+                                else if (round.id === 'round2' && gameProgressRound2) {
+                                  isCompleted = gameProgressRound2.completedGames?.includes(game.target) || false
+                                }
+
                                 const totalAttempts = attemptData?.total || 0
                                 const failedAttempts = attemptData?.failed || 0
 
@@ -381,7 +394,9 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                                   <span className="text-gray-300 font-mono text-xs font-bold">
                                     {round.id === 'round1' && gameProgress
                                       ? round.games.filter(game => gameProgress.completedGames?.includes(game.target)).length
-                                      : 0}
+                                      : round.id === 'round2' && gameProgressRound2
+                                        ? round.games.filter(game => gameProgressRound2.completedGames?.includes(game.target)).length
+                                        : 0}
                                     /
                                     {round.games.length}
                                     {' '}
@@ -399,9 +414,9 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                                 <div className="flex items-center gap-1">
                                   <span className="text-gray-500 font-mono text-xs">Max:</span>
                                   <span className="text-gray-300 font-mono text-xs font-bold">
-                                    {round.games.reduce((sum, game) => sum + game.points, 0)}
-                                    {' '}
-                                    pts
+                                    {round.id === 'round2'
+                                      ? 'Variable'
+                                      : `${round.games.reduce((sum, game) => sum + (typeof game.points === 'number' ? game.points : 0), 0)} pts`}
                                   </span>
                                 </div>
                               </div>
@@ -473,19 +488,35 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                       </div>
                     </div>
 
-                    {round.status === 'active' && gameProgress && (
+                    {round.status === 'active' && (
                       <div className="mt-4 pt-4 border-t border-gray-800/50">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-gray-400 font-mono text-xs">Round Progress</span>
                           <span className="text-gray-400 font-mono text-xs">
-                            {Math.round((gameProgress.gamesCompleted / 5) * 100)}
+                            {round.id === 'round1' && gameProgress
+                              ? Math.round((gameProgress.gamesCompleted / 5) * 100)
+                              : round.id === 'round2' && gameProgressRound2
+                                ? Math.round((gameProgressRound2.gamesCompleted / 3) * 100)
+                                : 0}
                             %
                           </span>
                         </div>
                         <div className="w-full bg-gray-800/50 rounded-full h-2">
                           <div
-                            className="bg-gradient-to-r from-green-500 to-green-400 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${(gameProgress.gamesCompleted / 5) * 100}%` }}
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              round.id === 'round1'
+                                ? 'bg-gradient-to-r from-green-500 to-green-400'
+                                : 'bg-gradient-to-r from-purple-500 to-purple-400'
+                            }`}
+                            style={{
+                              width: `${
+                                round.id === 'round1' && gameProgress
+                                  ? (gameProgress.gamesCompleted / 5) * 100
+                                  : round.id === 'round2' && gameProgressRound2
+                                    ? (gameProgressRound2.gamesCompleted / 3) * 100
+                                    : 0
+                              }%`,
+                            }}
                           />
                         </div>
                       </div>

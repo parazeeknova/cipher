@@ -1,6 +1,88 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Glitch Animation Keyframes */
+@keyframes glitch-1 {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes glitch-2 {
+  0% { clip-path: inset(20% 0 50% 0); }
+  100% { clip-path: inset(50% 0 20% 0); }
+}
+
+@keyframes glitch-3 {
+  0% { text-shadow: -2px 2px 0 #ff00ff, 2px -2px 0 #00ffff; }
+  100% { text-shadow: 2px -2px 0 #ff00ff, -2px 2px 0 #00ffff; }
+}
+
+/* Glitch Effect Classes */
+.glitch-effect-1 {
+  animation: glitch-1 0.1s infinite;
+}
+
+.glitch-effect-2 {
+  position: relative;
+}
+
+.glitch-effect-2::before,
+.glitch-effect-2::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  overflow: hidden;
+  opacity: 0.8;
+}
+
+.glitch-effect-2::before {
+  left: 2px;
+  text-shadow: -2px 0 #ff00ff;
+  animation: glitch-2 1s infinite linear alternate-reverse;
+}
+
+.glitch-effect-2::after {
+  left: -2px;
+  text-shadow: 2px 0 #00ffff;
+  animation: glitch-2 2s infinite linear alternate-reverse;
+}
+
+/* Dark theme enhancements */
+.dark {
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.9 0 0);
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.9 0 0);
+  --popover: oklch(0.2 0 0);
+  --popover-foreground: oklch(0.9 0 0);
+  --primary: oklch(0.6 0.2 270);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.3 0.1 270);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.3 0.1 270);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.6 0.2 20);
+  --border: oklch(0.3 0 0);
+  --input: oklch(0.3 0 0);
+  --ring: oklch(0.6 0.2 270);
+}
+
+/* Pulse animation for background elements */
+@keyframes pulse {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -117,4 +199,29 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom scrollbar styles for Round 2 page */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #a855f7 #1f2937;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #a855f7, #9333ea);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #c084fc, #a855f7);
 }
