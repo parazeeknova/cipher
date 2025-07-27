@@ -3,7 +3,6 @@
 import {
   ArrowRight,
   CheckCircle2,
-  Clock,
   Code,
   Crown,
   ExternalLink,
@@ -68,6 +67,10 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
     gameSessionId,
   })
 
+  const { data: gameProgressRound3 } = trpc.games.getGameProgressRound3.useQuery({
+    gameSessionId,
+  })
+
   const rounds = [
     {
       id: 'round1',
@@ -111,16 +114,17 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
       subtitle: 'Ultimate Showdown',
       description: 'Alliances crumble and anyone can win in this dramatic final round.',
       icon: <Sword className="w-8 h-8" />,
-      status: 'locked',
-      progress: '0/3',
-      points: '0/500',
+      status: 'active', // Changed to active
+      progress: gameProgressRound3 ? `${gameProgressRound3.phasesCompleted}/4` : '0/4',
+      points: gameProgressRound3 ? `${gameProgressRound3.totalPoints}/800` : '0/800',
       color: 'border-red-500/50 bg-red-500/10',
       games: [
-        { icon: <Clock className="w-4 h-4" />, name: 'The Trials', points: 150, target: 'trials' },
-        { icon: <Users className="w-4 h-4" />, name: 'The Heist', points: 200, target: 'heist' },
-        { icon: <Trophy className="w-4 h-4" />, name: 'Final Gambit', points: 150, target: 'final_gambit' },
+        { icon: <Target className="w-4 h-4" />, name: 'Phase 1: The Trials', points: 150, target: 'round3_phase1' },
+        { icon: <Users className="w-4 h-4" />, name: 'Phase 2: The Heist', points: 150, target: 'round3_phase2' },
+        { icon: <Trophy className="w-4 h-4" />, name: 'Phase 3: Final Gambit', points: 200, target: 'round3_phase3' },
+        { icon: <Crown className="w-4 h-4" />, name: 'Wildcard Finale', points: 300, target: 'round3_final_gambit' },
       ],
-      action: () => {},
+      action: () => window.open('/game/round3', '_blank'),
     },
   ]
 
@@ -246,6 +250,18 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                                 }
                                 else if (round.id === 'round2' && gameProgressRound2) {
                                   isCompleted = gameProgressRound2.completedGames?.includes(game.target) || false
+                                }
+                                else if (round.id === 'round3' && gameProgressRound3) {
+                                  // Map game targets to phase numbers
+                                  const phaseMap: Record<string, number> = {
+                                    round3_phase1: 1,
+                                    round3_phase2: 2,
+                                    round3_phase3: 3,
+                                    round3_final_gambit: 4,
+                                  }
+                                  const phaseNumber = phaseMap[game.target]
+                                  // @ts-expect-error - WIP
+                                  isCompleted = gameProgressRound3.completedPhases?.includes(phaseNumber) || false
                                 }
 
                                 const totalAttempts = attemptData?.total || 0
@@ -396,7 +412,9 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                                       ? round.games.filter(game => gameProgress.completedGames?.includes(game.target)).length
                                       : round.id === 'round2' && gameProgressRound2
                                         ? round.games.filter(game => gameProgressRound2.completedGames?.includes(game.target)).length
-                                        : 0}
+                                        : round.id === 'round3' && gameProgressRound3
+                                          ? gameProgressRound3.phasesCompleted
+                                          : 0}
                                     /
                                     {round.games.length}
                                     {' '}
@@ -493,12 +511,21 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-gray-400 font-mono text-xs">Round Progress</span>
                           <span className="text-gray-400 font-mono text-xs">
-                            {round.id === 'round1' && gameProgress
-                              ? Math.round((gameProgress.gamesCompleted / 5) * 100)
-                              : round.id === 'round2' && gameProgressRound2
-                                ? Math.round((gameProgressRound2.gamesCompleted / 3) * 100)
-                                : 0}
-                            %
+                            {(() => {
+                              if (round.id === 'round1' && gameProgress) {
+                                const progress = Math.min(100, Math.round((gameProgress.gamesCompleted / 5) * 100))
+                                return `${progress}%`
+                              }
+                              else if (round.id === 'round2' && gameProgressRound2) {
+                                const progress = Math.min(100, Math.round((gameProgressRound2.gamesCompleted / 3) * 100))
+                                return `${progress}%`
+                              }
+                              else if (round.id === 'round3' && gameProgressRound3) {
+                                const progress = Math.min(100, Math.round((gameProgressRound3.phasesCompleted / 4) * 100))
+                                return `${progress}%`
+                              }
+                              return '0%'
+                            })()}
                           </span>
                         </div>
                         <div className="w-full bg-gray-800/50 rounded-full h-2">
@@ -506,16 +533,23 @@ export function MainGameArea({ glitchEffect }: MainGameAreaProps) {
                             className={`h-2 rounded-full transition-all duration-500 ${
                               round.id === 'round1'
                                 ? 'bg-gradient-to-r from-green-500 to-green-400'
-                                : 'bg-gradient-to-r from-purple-500 to-purple-400'
+                                : round.id === 'round2'
+                                  ? 'bg-gradient-to-r from-purple-500 to-purple-400'
+                                  : 'bg-gradient-to-r from-red-500 to-red-400'
                             }`}
                             style={{
-                              width: `${
-                                round.id === 'round1' && gameProgress
-                                  ? (gameProgress.gamesCompleted / 5) * 100
-                                  : round.id === 'round2' && gameProgressRound2
-                                    ? (gameProgressRound2.gamesCompleted / 3) * 100
-                                    : 0
-                              }%`,
+                              width: `${(() => {
+                                if (round.id === 'round1' && gameProgress) {
+                                  return Math.min(100, (gameProgress.gamesCompleted / 5) * 100)
+                                }
+                                else if (round.id === 'round2' && gameProgressRound2) {
+                                  return Math.min(100, (gameProgressRound2.gamesCompleted / 3) * 100)
+                                }
+                                else if (round.id === 'round3' && gameProgressRound3) {
+                                  return Math.min(100, (gameProgressRound3.phasesCompleted / 4) * 100)
+                                }
+                                return 0
+                              })()}%`,
                             }}
                           />
                         </div>

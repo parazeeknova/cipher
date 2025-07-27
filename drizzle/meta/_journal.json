@@ -29,6 +29,13 @@
       "when": 1753534260549,
       "tag": "0003_soft_blackheart",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1753580213812,
+      "tag": "0004_blue_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

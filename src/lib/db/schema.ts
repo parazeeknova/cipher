@@ -52,6 +52,7 @@ export const playerStats = pgTable('player_stats', {
   round1Points: integer('round_1_points').default(0),
   round2Points: integer('round_2_points').default(0),
   round3Points: integer('round_3_points').default(0),
+  metadata: jsonb('metadata').default({}).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

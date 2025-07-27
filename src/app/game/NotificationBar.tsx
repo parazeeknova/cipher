@@ -1,6 +1,7 @@
 'use client'
 
 import { MessageSquare } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 
 interface Notification {
   id: number
@@ -14,6 +15,15 @@ interface NotificationBarProps {
 }
 
 export function NotificationBar({ notifications }: NotificationBarProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [notifications])
   return (
     <div className="backdrop-blur-xl bg-gray-900/40 border border-gray-800/50 rounded-2xl p-4 shadow-2xl">
       <div className="flex items-center gap-3 mb-3">
@@ -21,8 +31,8 @@ export function NotificationBar({ notifications }: NotificationBarProps) {
         <h3 className="text-white font-mono text-sm font-semibold">GAMEMASTER CONTROL</h3>
         <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
       </div>
-      <div className="space-y-2 max-h-20 overflow-y-auto">
-        {notifications.map(notif => (
+      <div className="space-y-2 max-h-20 overflow-y-auto scrollbar-hide">
+        {[...notifications].reverse().map(notif => (
           <div key={notif.id} className="flex items-start gap-2 text-xs">
             <div
               className={`w-1 h-1 rounded-full mt-2 animate-pulse ${
@@ -39,6 +49,7 @@ export function NotificationBar({ notifications }: NotificationBarProps) {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
     </div>
   )

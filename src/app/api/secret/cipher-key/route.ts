@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
+  // This endpoint is discovered through network analysis in Round 1
   return NextResponse.json({
-    message: 'Secret endpoint discovered!',
-    key: 'NETWORK_ANALYSIS_SUCCESS',
-    points: 20,
-    hint: 'You found the hidden API endpoint through network analysis!',
+    message: 'Network cartographer found the hidden path',
+    cipher_key: 'NETWORK_ANALYSIS_SUCCESS_2025',
+    status: 'discovered',
+    timestamp: new Date().toISOString(),
   })
 }
 
 export async function POST() {
   return NextResponse.json({
-    error: 'Method not allowed for this endpoint',
+    error: 'This endpoint only accepts GET requests',
   }, { status: 405 })
 }

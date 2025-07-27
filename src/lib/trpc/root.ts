@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import {
   challenges,
@@ -563,6 +563,171 @@ export const appRouter = router({
       if (currentCount <= 0)
         throw new Error('No lifelines of this type remaining')
 
+      // Define result type based on lifeline type
+      interface LifelineResult {
+        actions?: any[]
+        pointsDeducted?: number
+        challenges?: Array<{
+          id: number
+          title: string
+          description: string | null
+          solvedBy: {
+            id: number
+            username: string
+          }
+        }>
+      }
+
+      let result: LifelineResult = {}
+
+      switch (input.lifelineType) {
+        case 'intel':
+        // Get target user's action history
+        { if (!input.targetUserId) {
+          throw new Error('Target user ID is required for intel lifeline')
+        }
+        const targetActions = await ctx.db
+          .select()
+          .from(playerActions)
+          .where(
+            and(
+              eq(playerActions.userId, input.targetUserId),
+              eq(playerActions.gameSessionId, input.gameSessionId),
+            ),
+          )
+          .orderBy(desc(playerActions.createdAt))
+          .limit(50)
+
+        result = { actions: targetActions }
+        break }
+
+        case 'boost':
+        // Apply boost to player's next action (20% points boost)
+        { const currentMetadata = playerStatsData[0].metadata as Record<string, any> || {}
+          const newMetadata = {
+            ...currentMetadata,
+            hasBoost: true,
+            boostMultiplier: 1.2, // 20% boost
+            boostExpiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
+          }
+
+          await ctx.db
+            .update(playerStats)
+            .set({
+              metadata: newMetadata,
+            })
+            .where(and(
+              eq(playerStats.userId, user[0].id),
+              eq(playerStats.gameSessionId, input.gameSessionId),
+            ))
+          break }
+
+        case 'sabotage':
+        { if (!input.targetUserId) {
+          throw new Error('Target user ID is required for sabotage lifeline')
+        }
+
+        // Get target player stats
+        const targetStats = await ctx.db
+          .select()
+          .from(playerStats)
+          .where(
+            and(
+              eq(playerStats.userId, input.targetUserId),
+              eq(playerStats.gameSessionId, input.gameSessionId),
+            ),
+          )
+
+        if (!targetStats[0]) {
+          throw new Error('Target player not found')
+        }
+
+        // Calculate points to deduct (10% of target's points, min 10, max 50)
+        const pointsToDeduct = Math.min(50, Math.max(10, Math.floor(targetStats[0].points * 0.1)))
+
+        // Get current metadata or create empty object if null
+        const targetMetadata = targetStats[0].metadata as Record<string, any> || {}
+
+        // Update target's points and metadata
+        await ctx.db
+          .update(playerStats)
+          .set({
+            points: Math.max(0, targetStats[0].points - pointsToDeduct),
+            metadata: {
+              ...targetMetadata,
+              lastSabotagedAt: new Date().toISOString(),
+              sabotagedBy: user[0].id,
+            },
+          })
+          .where(and(
+            eq(playerStats.userId, input.targetUserId),
+            eq(playerStats.gameSessionId, input.gameSessionId),
+          ))
+
+        result = { pointsDeducted: pointsToDeduct }
+        break }
+
+        case 'snitch':
+        // First, get all challenges solved by other players in this game session
+        { const allSolvedChallenges = await ctx.db
+          .select({
+            challengeId: challengeSubmissions.challengeId,
+            challenge: challenges,
+            solvedBy: users,
+          })
+          .from(challengeSubmissions)
+          .innerJoin(challenges, eq(challenges.id, challengeSubmissions.challengeId))
+          .innerJoin(users, eq(users.id, challengeSubmissions.userId))
+          .where(
+            and(
+              eq(challengeSubmissions.gameSessionId, input.gameSessionId),
+              eq(challengeSubmissions.isCorrect, true),
+              ne(challengeSubmissions.userId, user[0].id), // Fixed: Use ne() for not equal
+            ),
+          )
+
+        // Get challenges the current user has already solved
+        const userSolvedChallenges = await ctx.db
+          .select({
+            challengeId: challengeSubmissions.challengeId,
+          })
+          .from(challengeSubmissions)
+          .where(
+            and(
+              eq(challengeSubmissions.gameSessionId, input.gameSessionId),
+              eq(challengeSubmissions.userId, user[0].id),
+              eq(challengeSubmissions.isCorrect, true),
+            ),
+          )
+
+        // Convert to a Set for faster lookups
+        const userSolvedChallengeIds = new Set(
+          userSolvedChallenges.map(c => c.challengeId),
+        )
+
+        // Filter out challenges the user has already solved
+        const unsolvedChallenges = allSolvedChallenges.filter(
+          c => !userSolvedChallengeIds.has(c.challengeId),
+        )
+
+        // Return up to 3 random unsolved challenges
+        const randomChallenges = unsolvedChallenges
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 3)
+          .map(c => ({
+            id: c.challenge.id,
+            title: c.challenge.title,
+            description: c.challenge.description,
+            solvedBy: {
+              id: c.solvedBy.id,
+              username: c.solvedBy.username || `${c.solvedBy.firstName || ''} ${c.solvedBy.lastName || ''}`.trim() || 'Unknown Player',
+            },
+          }))
+
+        result = { challenges: randomChallenges }
+        break }
+      }
+
       // Update lifelines count
       const newLifelines = {
         ...currentLifelines,
@@ -587,7 +752,7 @@ export const appRouter = router({
         gameSessionId: input.gameSessionId,
         lifelineType: input.lifelineType,
         targetUserId: input.targetUserId,
-        metadata: input.metadata,
+        metadata: { ...input.metadata, ...result },
       }).returning()
 
       // Record player action
@@ -597,10 +762,15 @@ export const appRouter = router({
         actionType: 'used_lifeline',
         result: 'success',
         target: input.lifelineType,
-        metadata: { lifelineType: input.lifelineType, ...input.metadata },
+        metadata: {
+          lifelineType: input.lifelineType,
+          ...(input.targetUserId ? { targetUserId: input.targetUserId } : {}),
+          ...result,
+        },
       })
 
       return {
+        ...result,
         lifelineUsage: lifelineUsageRecord[0],
         remainingCount: currentCount - 1,
       }
