@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { and, desc, eq, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import {
@@ -13,7 +14,7 @@ import {
 } from '../db/schema'
 import { generatePlayerId } from '../utils/player-id'
 import { gamesRouter } from './routers/games'
-import { protectedProcedure, publicProcedure, router } from './server'
+import { gameUserProcedure, protectedProcedure, publicProcedure, router } from './server'
 
 export const appRouter = router({
   health: publicProcedure
@@ -203,7 +204,7 @@ export const appRouter = router({
       }
     }),
 
-  getUser: protectedProcedure
+  getUser: gameUserProcedure
     .query(async ({ ctx }) => {
       const user = await ctx.db.select().from(users).where(eq(users.clerkId, ctx.userId))
       return user[0] || null
@@ -214,8 +215,66 @@ export const appRouter = router({
       return await ctx.db.select().from(users)
     }),
 
+  createDirectUser: publicProcedure
+    .input(z.object({
+      username: z.string().min(3).max(50),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      console.log('Creating direct user:', input.username)
+      try {
+        // Check if username is already taken
+        const existingUser = await ctx.db.select().from(users).where(eq(users.username, input.username))
+        if (existingUser.length > 0) {
+          throw new Error('Username already exists')
+        }
+
+        // Generate unique player ID
+        let playerId = generatePlayerId()
+        let attempts = 0
+        const maxAttempts = 10
+
+        while (attempts < maxAttempts) {
+          const playerIdExists = await ctx.db.select().from(users).where(eq(users.playerId, playerId))
+          if (playerIdExists.length === 0) {
+            break
+          }
+          playerId = generatePlayerId()
+          attempts++
+        }
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Failed to generate unique player ID')
+        }
+
+        // Create a fake clerk ID for direct users (prefixed with 'direct_')
+        const fakeClerkId = `direct_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+        const userValues = {
+          clerkId: fakeClerkId,
+          playerId,
+          username: input.username,
+          email: `${input.username}@direct.local`, // Fake email for direct users
+          firstName: input.username,
+          lastName: 'Player',
+        }
+
+        console.log('Inserting user with values:', userValues)
+        const user = await ctx.db.insert(users).values(userValues).returning()
+        console.log('Direct user created successfully:', user[0])
+
+        return user[0]
+      }
+      catch (error) {
+        console.error('Error creating direct user:', error)
+        if (error instanceof Error) {
+          throw error
+        }
+        throw new Error('Failed to create direct user')
+      }
+    }),
+
   // Game procedures
-  getCurrentGameSession: protectedProcedure
+  getCurrentGameSession: gameUserProcedure
     .query(async ({ ctx }) => {
       const session = await ctx.db
         .select()
@@ -241,7 +300,30 @@ export const appRouter = router({
       return session[0]
     }),
 
-  getPlayerStats: protectedProcedure
+  getOrCreateDefaultGameSession: gameUserProcedure
+    .query(async ({ ctx }) => {
+      // First try to get an active session
+      let session = await ctx.db
+        .select()
+        .from(gameSessions)
+        .where(eq(gameSessions.isActive, true))
+        .orderBy(desc(gameSessions.createdAt))
+        .limit(1)
+
+      if (session.length === 0) {
+        // Create a default session if none exists
+        const newSession = await ctx.db.insert(gameSessions).values({
+          name: 'Default Game Session',
+          settings: {},
+        }).returning()
+
+        session = newSession
+      }
+
+      return session[0]
+    }),
+
+  getPlayerStats: gameUserProcedure
     .input(z.object({
       gameSessionId: z.number(),
     }))
@@ -263,7 +345,7 @@ export const appRouter = router({
       return stats[0] || null
     }),
 
-  getLeaderboard: protectedProcedure
+  getLeaderboard: gameUserProcedure
     .input(z.object({
       gameSessionId: z.number(),
     }))
@@ -416,7 +498,7 @@ export const appRouter = router({
       return actions
     }),
 
-  getChatMessages: protectedProcedure
+  getChatMessages: gameUserProcedure
     .input(z.object({
       gameSessionId: z.number(),
       limit: z.number().optional().default(100),
@@ -440,7 +522,7 @@ export const appRouter = router({
       return messages.reverse()
     }),
 
-  sendChatMessage: protectedProcedure
+  sendChatMessage: gameUserProcedure
     .input(z.object({
       gameSessionId: z.number(),
       message: z.string().min(1).max(1000),
@@ -459,7 +541,7 @@ export const appRouter = router({
       return chatMessage[0]
     }),
 
-  getNotifications: protectedProcedure
+  getNotifications: gameUserProcedure
     .input(z.object({
       gameSessionId: z.number(),
       limit: z.number().optional().default(20),
@@ -583,27 +665,30 @@ export const appRouter = router({
       switch (input.lifelineType) {
         case 'intel':
         // Get target user's action history
-        { if (!input.targetUserId) {
-          throw new Error('Target user ID is required for intel lifeline')
-        }
-        const targetActions = await ctx.db
-          .select()
-          .from(playerActions)
-          .where(
-            and(
-              eq(playerActions.userId, input.targetUserId),
-              eq(playerActions.gameSessionId, input.gameSessionId),
-            ),
-          )
-          .orderBy(desc(playerActions.createdAt))
-          .limit(50)
+        {
+          if (!input.targetUserId) {
+            throw new Error('Target user ID is required for intel lifeline')
+          }
+          const targetActions = await ctx.db
+            .select()
+            .from(playerActions)
+            .where(
+              and(
+                eq(playerActions.userId, input.targetUserId),
+                eq(playerActions.gameSessionId, input.gameSessionId),
+              ),
+            )
+            .orderBy(desc(playerActions.createdAt))
+            .limit(50)
 
-        result = { actions: targetActions }
-        break }
+          result = { actions: targetActions }
+          break
+        }
 
         case 'boost':
         // Apply boost to player's next action (20% points boost)
-        { const currentMetadata = playerStatsData[0].metadata as Record<string, any> || {}
+        {
+          const currentMetadata = playerStatsData[0].metadata as Record<string, any> || {}
           const newMetadata = {
             ...currentMetadata,
             hasBoost: true,
@@ -620,112 +705,117 @@ export const appRouter = router({
               eq(playerStats.userId, user[0].id),
               eq(playerStats.gameSessionId, input.gameSessionId),
             ))
-          break }
+          break
+        }
 
         case 'sabotage':
-        { if (!input.targetUserId) {
-          throw new Error('Target user ID is required for sabotage lifeline')
-        }
+        {
+          if (!input.targetUserId) {
+            throw new Error('Target user ID is required for sabotage lifeline')
+          }
 
-        // Get target player stats
-        const targetStats = await ctx.db
-          .select()
-          .from(playerStats)
-          .where(
-            and(
+          // Get target player stats
+          const targetStats = await ctx.db
+            .select()
+            .from(playerStats)
+            .where(
+              and(
+                eq(playerStats.userId, input.targetUserId),
+                eq(playerStats.gameSessionId, input.gameSessionId),
+              ),
+            )
+
+          if (!targetStats[0]) {
+            throw new Error('Target player not found')
+          }
+
+          // Calculate points to deduct (10% of target's points, min 10, max 50)
+          const pointsToDeduct = Math.min(50, Math.max(10, Math.floor(targetStats[0].points * 0.1)))
+
+          // Get current metadata or create empty object if null
+          const targetMetadata = targetStats[0].metadata as Record<string, any> || {}
+
+          // Update target's points and metadata
+          await ctx.db
+            .update(playerStats)
+            .set({
+              points: Math.max(0, targetStats[0].points - pointsToDeduct),
+              metadata: {
+                ...targetMetadata,
+                lastSabotagedAt: new Date().toISOString(),
+                sabotagedBy: user[0].id,
+              },
+            })
+            .where(and(
               eq(playerStats.userId, input.targetUserId),
               eq(playerStats.gameSessionId, input.gameSessionId),
-            ),
-          )
+            ))
 
-        if (!targetStats[0]) {
-          throw new Error('Target player not found')
+          result = { pointsDeducted: pointsToDeduct }
+          break
         }
-
-        // Calculate points to deduct (10% of target's points, min 10, max 50)
-        const pointsToDeduct = Math.min(50, Math.max(10, Math.floor(targetStats[0].points * 0.1)))
-
-        // Get current metadata or create empty object if null
-        const targetMetadata = targetStats[0].metadata as Record<string, any> || {}
-
-        // Update target's points and metadata
-        await ctx.db
-          .update(playerStats)
-          .set({
-            points: Math.max(0, targetStats[0].points - pointsToDeduct),
-            metadata: {
-              ...targetMetadata,
-              lastSabotagedAt: new Date().toISOString(),
-              sabotagedBy: user[0].id,
-            },
-          })
-          .where(and(
-            eq(playerStats.userId, input.targetUserId),
-            eq(playerStats.gameSessionId, input.gameSessionId),
-          ))
-
-        result = { pointsDeducted: pointsToDeduct }
-        break }
 
         case 'snitch':
         // First, get all challenges solved by other players in this game session
-        { const allSolvedChallenges = await ctx.db
-          .select({
-            challengeId: challengeSubmissions.challengeId,
-            challenge: challenges,
-            solvedBy: users,
-          })
-          .from(challengeSubmissions)
-          .innerJoin(challenges, eq(challenges.id, challengeSubmissions.challengeId))
-          .innerJoin(users, eq(users.id, challengeSubmissions.userId))
-          .where(
-            and(
-              eq(challengeSubmissions.gameSessionId, input.gameSessionId),
-              eq(challengeSubmissions.isCorrect, true),
-              ne(challengeSubmissions.userId, user[0].id), // Fixed: Use ne() for not equal
-            ),
+        {
+          const allSolvedChallenges = await ctx.db
+            .select({
+              challengeId: challengeSubmissions.challengeId,
+              challenge: challenges,
+              solvedBy: users,
+            })
+            .from(challengeSubmissions)
+            .innerJoin(challenges, eq(challenges.id, challengeSubmissions.challengeId))
+            .innerJoin(users, eq(users.id, challengeSubmissions.userId))
+            .where(
+              and(
+                eq(challengeSubmissions.gameSessionId, input.gameSessionId),
+                eq(challengeSubmissions.isCorrect, true),
+                ne(challengeSubmissions.userId, user[0].id), // Fixed: Use ne() for not equal
+              ),
+            )
+
+          // Get challenges the current user has already solved
+          const userSolvedChallenges = await ctx.db
+            .select({
+              challengeId: challengeSubmissions.challengeId,
+            })
+            .from(challengeSubmissions)
+            .where(
+              and(
+                eq(challengeSubmissions.gameSessionId, input.gameSessionId),
+                eq(challengeSubmissions.userId, user[0].id),
+                eq(challengeSubmissions.isCorrect, true),
+              ),
+            )
+
+          // Convert to a Set for faster lookups
+          const userSolvedChallengeIds = new Set(
+            userSolvedChallenges.map(c => c.challengeId),
           )
 
-        // Get challenges the current user has already solved
-        const userSolvedChallenges = await ctx.db
-          .select({
-            challengeId: challengeSubmissions.challengeId,
-          })
-          .from(challengeSubmissions)
-          .where(
-            and(
-              eq(challengeSubmissions.gameSessionId, input.gameSessionId),
-              eq(challengeSubmissions.userId, user[0].id),
-              eq(challengeSubmissions.isCorrect, true),
-            ),
+          // Filter out challenges the user has already solved
+          const unsolvedChallenges = allSolvedChallenges.filter(
+            c => !userSolvedChallengeIds.has(c.challengeId),
           )
 
-        // Convert to a Set for faster lookups
-        const userSolvedChallengeIds = new Set(
-          userSolvedChallenges.map(c => c.challengeId),
-        )
+          // Return up to 3 random unsolved challenges
+          const randomChallenges = unsolvedChallenges
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 3)
+            .map(c => ({
+              id: c.challenge.id,
+              title: c.challenge.title,
+              description: c.challenge.description,
+              solvedBy: {
+                id: c.solvedBy.id,
+                username: c.solvedBy.username || `${c.solvedBy.firstName || ''} ${c.solvedBy.lastName || ''}`.trim() || 'Unknown Player',
+              },
+            }))
 
-        // Filter out challenges the user has already solved
-        const unsolvedChallenges = allSolvedChallenges.filter(
-          c => !userSolvedChallengeIds.has(c.challengeId),
-        )
-
-        // Return up to 3 random unsolved challenges
-        const randomChallenges = unsolvedChallenges
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 3)
-          .map(c => ({
-            id: c.challenge.id,
-            title: c.challenge.title,
-            description: c.challenge.description,
-            solvedBy: {
-              id: c.solvedBy.id,
-              username: c.solvedBy.username || `${c.solvedBy.firstName || ''} ${c.solvedBy.lastName || ''}`.trim() || 'Unknown Player',
-            },
-          }))
-
-        result = { challenges: randomChallenges }
-        break }
+          result = { challenges: randomChallenges }
+          break
+        }
       }
 
       // Update lifelines count

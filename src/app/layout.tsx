@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { DirectUserProvider } from '@/contexts/DirectUserContext'
 import { TRPCProvider } from '@/lib/trpc/provider'
 import { Toaster } from '@/shadcn/ui/toaster'
 import './globals.css'
@@ -32,10 +33,12 @@ export default function RootLayout({
           <script defer src="https://analytics-umami.zephyyrr.in/script.js" data-website-id="c32f955d-1e26-4e7f-85b9-6fc2e65759f1"></script>
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          <TRPCProvider>
-            {children}
-            <Toaster />
-          </TRPCProvider>
+          <DirectUserProvider>
+            <TRPCProvider>
+              {children}
+              <Toaster />
+            </TRPCProvider>
+          </DirectUserProvider>
         </body>
       </html>
     </ClerkProvider>

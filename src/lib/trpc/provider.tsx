@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -39,6 +40,25 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
+          headers() {
+            // Get direct user from localStorage dynamically on each request
+            if (typeof window !== 'undefined') {
+              const directUser = localStorage.getItem('directUser')
+              if (directUser) {
+                try {
+                  const user = JSON.parse(directUser)
+                  console.log('TRPC: Sending direct user header:', user.clerkId)
+                  return {
+                    'x-direct-user-id': user.clerkId,
+                  }
+                }
+                catch (error) {
+                  console.error('Failed to parse direct user:', error)
+                }
+              }
+            }
+            return {}
+          },
         }),
       ],
     }),

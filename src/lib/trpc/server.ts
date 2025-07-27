@@ -6,9 +6,13 @@ import { db } from '../db/client'
 export async function createContext(req: NextRequest) {
   const { userId } = await auth()
 
+  // Check for direct user in headers (we'll pass this from the client)
+  const directUserId = req.headers.get('x-direct-user-id')
+
   return {
     req,
-    userId,
+    userId: userId || directUserId,
+    isDirectUser: !!directUserId && !userId,
     db,
   }
 }
@@ -36,6 +40,26 @@ export const protectedProcedure = t.procedure.use(async (opts) => {
     ctx: {
       ...ctx,
       userId: ctx.userId,
+    },
+  })
+})
+
+// Create a procedure that works with both Clerk users and direct users
+export const gameUserProcedure = t.procedure.use(async (opts) => {
+  const { ctx } = opts
+
+  if (!ctx.userId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to access this resource',
+    })
+  }
+
+  return opts.next({
+    ctx: {
+      ...ctx,
+      userId: ctx.userId,
+      isDirectUser: ctx.isDirectUser,
     },
   })
 })

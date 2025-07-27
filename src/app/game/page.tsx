@@ -1,6 +1,10 @@
+/* eslint-disable no-console */
 'use client'
 
+import { useUser } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useDirectUser } from '@/contexts/DirectUserContext'
 import { trpc } from '@/lib/trpc/client'
 import { ActionHistory } from './ActionHistory'
 import { ControlPanel } from './ControlPanel'
@@ -12,27 +16,75 @@ import { NotificationBar } from './NotificationBar'
 import { PlayerUIBar } from './PlayerUIBar'
 
 export default function GamePage() {
+  const router = useRouter()
+  const { isSignedIn, isLoaded } = useUser()
+  const { directUser, isDirectUser } = useDirectUser()
   const [glitchEffect, setGlitchEffect] = useState(false)
   const [playerGlitch, setPlayerGlitch] = useState<number | null>(null)
   const [buttonGlitch, setButtonGlitch] = useState<number | null>(null)
   const [actionGlitch, setActionGlitch] = useState<number | null>(null)
   const [newMessage, setNewMessage] = useState('')
 
-  const { data: gameSession, isLoading: sessionLoading } = trpc.getCurrentGameSession.useQuery()
+  // Check if user is authenticated (either through Clerk or direct user)
+  const isAuthenticated = isDirectUser || (isLoaded && isSignedIn)
+
+  console.log('Game page - Auth status:', {
+    isLoaded,
+    isSignedIn,
+    isDirectUser,
+    directUser,
+    isAuthenticated,
+  })
+
+  useEffect(() => {
+    console.log('Game page useEffect - Auth check:', { isLoaded, isAuthenticated, isDirectUser })
+    // For direct users, we don't need to wait for Clerk to load
+    if (isDirectUser) {
+      console.log('Direct user authenticated, continuing...')
+      return
+    }
+
+    // For Clerk users, wait for Clerk to load and check authentication
+    if (isLoaded && !isSignedIn) {
+      console.log('Clerk loaded but not signed in, redirecting to home')
+      router.push('/')
+    }
+  }, [isLoaded, isAuthenticated, isDirectUser, isSignedIn, router])
+
+  const { data: gameSession, isLoading: sessionLoading } = trpc.getOrCreateDefaultGameSession.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated,
+      retry: 3,
+      retryDelay: 1000,
+    },
+  )
 
   const { data: _playerStats, isLoading: statsLoading } = trpc.getPlayerStats.useQuery(
     { gameSessionId: gameSession?.id || 0 },
-    { enabled: !!gameSession?.id },
+    {
+      enabled: !!gameSession?.id && isAuthenticated,
+      retry: 3,
+      retryDelay: 1000,
+    },
   )
 
   const { data: chatMessages, isLoading: chatLoading } = trpc.getChatMessages.useQuery(
     { gameSessionId: gameSession?.id || 0, limit: 100 },
-    { enabled: !!gameSession?.id },
+    {
+      enabled: !!gameSession?.id && isAuthenticated,
+      retry: 3,
+      retryDelay: 1000,
+    },
   )
 
   const { data: notifications, isLoading: notificationsLoading } = trpc.getNotifications.useQuery(
     { gameSessionId: gameSession?.id || 0, limit: 20 },
-    { enabled: !!gameSession?.id },
+    {
+      enabled: !!gameSession?.id && isAuthenticated,
+      retry: 3,
+      retryDelay: 1000,
+    },
   )
 
   const sendMessageMutation = trpc.sendChatMessage.useMutation()
@@ -89,11 +141,17 @@ export default function GamePage() {
     }
   }
 
-  if (sessionLoading || statsLoading || chatLoading || notificationsLoading) {
+  // Show loading if:
+  // - For Clerk users: Clerk is not loaded yet OR not authenticated
+  // - For direct users: not authenticated
+  // - OR game data is loading
+  const shouldShowLoading = (!isDirectUser && !isLoaded) || !isAuthenticated || sessionLoading || statsLoading || chatLoading || notificationsLoading
+
+  if (shouldShowLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white font-mono text-lg animate-pulse">
-          Loading game data...
+          {!isAuthenticated ? 'Checking authentication...' : 'Loading game data...'}
         </div>
       </div>
     )
